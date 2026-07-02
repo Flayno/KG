@@ -32,6 +32,14 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# local sqlite
+*.db
+*.db-journal
+
+# generated postgres schema (derived from schema.prisma by scripts/postgres-schema.cjs)
+prisma/schema.postgres.prisma
 
 # vercel
 .vercel

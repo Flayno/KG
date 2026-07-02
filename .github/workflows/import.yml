@@ -1,0 +1,33 @@
+name: Import data into Neon
+
+# Runs in the cloud (GitHub-hosted runner, outside RU) so it can reach BOTH
+# the source (kg.dbapp.ru) and Neon Postgres. Populates the production DB.
+#
+# Setup: repo Settings -> Secrets and variables -> Actions -> New secret
+#        name: DATABASE_URL   value: <Neon connection string>
+#
+# Trigger: Actions tab -> "Import data into Neon" -> Run workflow.
+# (Optional) uncomment the schedule block to refresh on a cadence.
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 3 * * 0"   # every Sunday 03:00 UTC (weekly full refresh)
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Create tables on Neon
+        run: npm run pg:push
+      - name: Import all servers
+        run: npm run pg:import-all

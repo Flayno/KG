@@ -1,0 +1,190 @@
+// KG Companion — database schema.
+// Local dev uses SQLite (this file). For cloud (Vercel + Neon Postgres) the provider
+// is swapped to postgresql automatically by scripts/postgres-schema.cjs at build/import
+// time — see docs/DEPLOY.md. Keep models provider-agnostic (no @db.* types).
+// Mirrors the data hierarchy of kg.dbapp.ru:
+//   Cluster (G1..G6) -> Segment/Season -> Server -> Alliance -> Character
+// Power values are huge in-game numbers, stored as BigInt.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Cluster {
+  id          Int       @id
+  name        String
+  description String
+  segments    Segment[]
+}
+
+model Segment {
+  id        Int      @id @default(autoincrement())
+  season    Int
+  name      String
+  clusterId Int
+  cluster   Cluster  @relation(fields: [clusterId], references: [id])
+  servers   Server[]
+}
+
+model Flag {
+  id         Int         @id
+  code       String
+  name       String
+  content    String // emoji flag
+  characters Character[]
+}
+
+model Server {
+  id          Int         @id
+  online      Boolean     @default(true)
+  closed      Boolean     @default(false)
+  cold        Boolean     @default(false)
+  season      Int
+  segmentId   Int
+  segment     Segment     @relation(fields: [segmentId], references: [id])
+  openDate    String?
+  offlineDate String?
+  kingId      Int?
+  alliances   Alliance[]
+  characters  Character[]
+}
+
+model Alliance {
+  id        String              @id // 16-char hex id
+  name      String // internal name
+  label     String // visible tag, e.g. "GODS"
+  serverId  Int
+  server    Server              @relation(fields: [serverId], references: [id])
+  power     BigInt              @default(0)
+  members   Int                 @default(0)
+  maxMembers Int                @default(100)
+  description String?
+  logoImage String?
+  techLevel Int                 @default(0)
+  kvkWins   Int                 @default(0)
+  hostile   Boolean             @default(false)
+  hostileReason String?
+  deleted   Boolean             @default(false)
+  refreshedAt DateTime?
+  characters Character[]
+  snapshots AllianceSnapshot[]
+
+  @@index([serverId])
+}
+
+model Character {
+  id          Int        @id
+  nickname    String
+  searchName  String     @default("") // accent-folded lowercase nickname for search
+  serverId    Int
+  server      Server     @relation(fields: [serverId], references: [id])
+  allianceId  String?
+  alliance    Alliance?  @relation(fields: [allianceId], references: [id])
+  power       BigInt     @default(0)
+  maxPower    BigInt     @default(0)
+  level       Int        @default(0)
+  active      Boolean    @default(true)
+  flagId      Int?
+  flag        Flag?      @relation(fields: [flagId], references: [id])
+  gender      Int        @default(0)
+  lastOnline  String?
+  deleted     Boolean    @default(false)
+  pvpDamage   BigInt     @default(0)
+  pvpRate     Float      @default(0)
+  avatar      String?
+  allianceRank     Int?
+  allianceRankName String?
+  blacklisted      Boolean  @default(false)
+  blacklistReason  String?
+  refreshedAt DateTime?
+  detailSyncedAt DateTime? // last full sync (profile + activity + alliance history)
+  historySyncedAt DateTime? // last time alliance-history links were fetched (bulk-friendly)
+  accountKey  String?  // shared key for all in-game characters on one account
+  snapshots   CharacterSnapshot[]
+
+  @@index([serverId])
+  @@index([allianceId])
+  @@index([power])
+  @@index([maxPower])
+  @@index([searchName])
+  @@index([blacklisted])
+  @@index([accountKey])
+}
+
+model CharacterSnapshot {
+  id          Int       @id @default(autoincrement())
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id])
+  date        String // YYYY-MM-DD
+  power       BigInt
+  maxPower    BigInt
+  level       Int
+  pvpDamage   BigInt    @default(0)
+  allianceId  String?
+
+  @@index([characterId, date])
+}
+
+// Shared BL (Broken Land) planning grid — officers paint factions/targets + notes.
+model BlPlan {
+  id        Int      @id
+  gridSize  Int      @default(20)
+  cells     String   @default("{}") // JSON: { "x_y": { c?: colorKey, t?: label } }
+  updatedAt DateTime @updatedAt
+}
+
+// Manually asserted "same person" links between two characters (the game doesn't
+// auto-link them). Effective account = game-linked group ∪ manual links.
+model ManualLink {
+  id Int @id @default(autoincrement())
+  a  Int
+  b  Int
+
+  @@unique([a, b])
+  @@index([a])
+  @@index([b])
+}
+
+// A character's past nicknames (from /character/:id/history) — for search by old names.
+model CharacterNameHistory {
+  id          Int    @id @default(autoincrement())
+  characterId Int
+  name        String
+  searchName  String // accent-folded lowercase
+  date        String
+
+  @@unique([characterId, name])
+  @@index([characterId])
+  @@index([searchName])
+}
+
+// A character's historical alliance memberships (from /character/:id/history).
+// Used to tag players who were ever in a hostile alliance.
+model CharacterAllianceLink {
+  id           Int    @id @default(autoincrement())
+  characterId  Int
+  allianceUuid String
+  label        String
+  name         String
+  date         String
+
+  @@unique([characterId, allianceUuid])
+  @@index([allianceUuid])
+  @@index([characterId])
+}
+
+model AllianceSnapshot {
+  id         Int      @id @default(autoincrement())
+  allianceId String
+  alliance   Alliance @relation(fields: [allianceId], references: [id])
+  date       String
+  power      BigInt
+  members    Int
+
+  @@index([allianceId, date])
+}

@@ -5,11 +5,26 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "node scripts/postgres-schema.cjs && prisma generate --schema prisma/schema.postgres.prisma && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "tsx prisma/reset.ts",
+    "db:import": "tsx prisma/import.ts",
+    "db:import-server": "tsx prisma/import-server.ts",
+    "db:import-all": "tsx prisma/import-all.ts",
+    "db:sync-history": "tsx prisma/sync-history.ts",
+    "db:studio": "prisma studio",
+    "pg:generate": "node scripts/postgres-schema.cjs && prisma generate --schema prisma/schema.postgres.prisma",
+    "pg:push": "node scripts/postgres-schema.cjs && prisma db push --schema prisma/schema.postgres.prisma",
+    "pg:import-all": "npm run pg:generate && tsx prisma/import-all.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "next": "16.2.9",
+    "pg": "^8.22.0",
+    "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -21,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PageTitle } from "@/components/Bits";
-import {
-  generateBlMap, BL_SIZE, FACTION_INFO, POI_INFO, TERRAIN_COLOR,
-} from "@/lib/blMap";
+
+const N = 24;
+const CELL = 30;
+const SIZE = N * CELL;
+const MAP_SRC = "/bl-map.png";
 
 type Mark = { m?: string; t?: string };
 type Marks = Record<string, Mark>;
@@ -21,11 +23,12 @@ const MARK_COLOR: Record<string, string> = Object.fromEntries(
 );
 
 export default function BlPlannerPage() {
-  const base = useMemo(() => generateBlMap(), []);
   const [marks, setMarks] = useState<Marks>({});
   const [brush, setBrush] = useState("atk");
   const [dirty, setDirty] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
+  const [hasMap, setHasMap] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
   const painting = useRef(false);
 
   useEffect(() => {
@@ -42,22 +45,17 @@ export default function BlPlannerPage() {
   }, []);
 
   function apply(x: number, y: number) {
-    const terr = base[y][x].terrain;
-    if (terr === "mountain" || terr === "rift") return; // impassable
     const key = `${x}_${y}`;
     setMarks((prev) => {
       const next = { ...prev };
       const cur = next[key] ?? {};
-      if (brush === "erase") {
-        delete next[key];
-      } else if (brush === "note") {
+      if (brush === "erase") delete next[key];
+      else if (brush === "note") {
         const t = window.prompt("Заметка на клетке:", cur.t ?? "");
         if (t === null) return prev;
         next[key] = { ...cur, t: t || undefined };
         if (!next[key].m && !next[key].t) delete next[key];
-      } else {
-        next[key] = { ...cur, m: brush };
-      }
+      } else next[key] = { ...cur, m: brush };
       return next;
     });
     setDirty(true);
@@ -67,7 +65,7 @@ export default function BlPlannerPage() {
     await fetch("/api/bl-plan", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ gridSize: BL_SIZE, cells: marks }),
+      body: JSON.stringify({ gridSize: N, cells: marks }),
     });
     setDirty(false);
     setSaved(new Date().toLocaleString("ru-RU"));
@@ -75,7 +73,7 @@ export default function BlPlannerPage() {
 
   return (
     <div>
-      <PageTitle title="Карта BL — планировщик" subtitle="Реальная территория BL. Отмечай атаки, оборону и цели — план общий для офицеров." />
+      <PageTitle title="Карта BL — планировщик" subtitle="Реальная карта BL 24×24. Отмечай атаки, оборону и цели — план общий для офицеров." />
 
       <div className="flex flex-wrap items-center gap-2 mb-3">
         {BRUSHES.map((b) => (
@@ -91,7 +89,10 @@ export default function BlPlannerPage() {
           </button>
         ))}
         <span className="mx-1 h-5 w-px bg-border" />
-        <button onClick={() => { if (confirm("Очистить весь план (метки)?")) { setMarks({}); setDirty(true); } }} className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground">
+        <label className="text-sm text-muted inline-flex items-center gap-1">
+          <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} /> сетка
+        </label>
+        <button onClick={() => { if (confirm("Очистить все метки?")) { setMarks({}); setDirty(true); } }} className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground">
           Очистить метки
         </button>
         <button onClick={save} disabled={!dirty} className="text-sm px-4 py-1.5 rounded bg-primary-strong text-white disabled:opacity-40">
@@ -100,66 +101,68 @@ export default function BlPlannerPage() {
         <span className="text-xs text-muted">{dirty ? "не сохранено" : saved ? `сохранено: ${saved}` : ""}</span>
       </div>
 
+      {!hasMap && (
+        <div className="mb-3 text-sm text-orange-400 border border-orange-500/40 rounded p-3 max-w-xl">
+          Карта не найдена. Сохрани изображение карты как <code className="text-foreground">public/bl-map.png</code> в папке проекта — и обнови страницу.
+        </div>
+      )}
+
       <div className="overflow-auto">
-        <div
-          className="grid gap-px bg-[#3a2c20] p-px rounded select-none touch-none"
-          style={{ gridTemplateColumns: `repeat(${BL_SIZE}, 34px)`, width: BL_SIZE * 34 + 2 }}
-        >
-          {base.flat().map((cell) => {
-            const key = `${cell.x}_${cell.y}`;
-            const mk = marks[key];
-            const poi = cell.poi ? POI_INFO[cell.poi] : null;
-            const tint = cell.terrain === "plain" ? FACTION_INFO[cell.faction].tint : "transparent";
-            const markColor = mk?.m ? MARK_COLOR[mk.m] : null;
-            return (
-              <div
-                key={key}
-                onPointerDown={(e) => { e.preventDefault(); painting.current = true; apply(cell.x, cell.y); }}
-                onPointerEnter={() => { if (painting.current && brush !== "note") apply(cell.x, cell.y); }}
-                title={`${poi ? POI_INFO[cell.poi!].name + " · " : ""}${FACTION_INFO[cell.faction].name}${mk?.t ? " · " + mk.t : ""}`}
-                className="relative flex items-center justify-center text-[13px]"
-                style={{
-                  width: 34, height: 34,
-                  background: TERRAIN_COLOR[cell.terrain],
-                  cursor: cell.terrain === "mountain" || cell.terrain === "rift" ? "not-allowed" : "pointer",
-                  boxShadow: markColor ? `inset 0 0 0 3px ${markColor}` : undefined,
-                }}
-              >
-                {tint !== "transparent" && (
-                  <span className="absolute inset-0" style={{ background: tint }} />
-                )}
-                {cell.terrain === "fortress" && <span className="relative">🏰</span>}
-                {poi && <span className="relative">{poi.icon}</span>}
-                {mk?.t && (
-                  <span className="absolute bottom-0 inset-x-0 text-[7px] leading-tight text-black font-bold text-center bg-white/70 truncate px-px">
-                    {mk.t}
-                  </span>
-                )}
-              </div>
-            );
-          })}
+        <div className="relative select-none touch-none" style={{ width: SIZE, height: SIZE }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={MAP_SRC}
+            alt="BL map"
+            width={SIZE}
+            height={SIZE}
+            onError={() => setHasMap(false)}
+            className="absolute inset-0 rounded"
+            style={{ width: SIZE, height: SIZE, objectFit: "cover", background: "#c9a06a" }}
+          />
+          <div
+            className="absolute inset-0 grid"
+            style={{ gridTemplateColumns: `repeat(${N}, ${CELL}px)`, gridTemplateRows: `repeat(${N}, ${CELL}px)` }}
+          >
+            {Array.from({ length: N * N }).map((_, i) => {
+              const x = i % N;
+              const y = Math.floor(i / N);
+              const mk = marks[`${x}_${y}`];
+              const markColor = mk?.m ? MARK_COLOR[mk.m] : null;
+              return (
+                <div
+                  key={i}
+                  onPointerDown={(e) => { e.preventDefault(); painting.current = true; apply(x, y); }}
+                  onPointerEnter={() => { if (painting.current && brush !== "note") apply(x, y); }}
+                  title={mk?.t || `${x},${y}`}
+                  className="relative"
+                  style={{
+                    width: CELL, height: CELL, cursor: "pointer",
+                    border: showGrid ? "1px solid rgba(0,0,0,0.18)" : "none",
+                    boxShadow: markColor ? `inset 0 0 0 3px ${markColor}` : undefined,
+                    background: markColor ? `${markColor}22` : undefined,
+                  }}
+                >
+                  {mk?.t && (
+                    <span className="absolute bottom-0 inset-x-0 text-[8px] leading-tight text-black font-bold text-center bg-white/75 truncate px-px">
+                      {mk.t}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* legend */}
       <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-muted">
-        <span>🏰 крепость</span>
-        {Object.entries(POI_INFO).filter(([k]) => k !== "start").map(([k, v]) => (
-          <span key={k}>{v.icon} {v.name}</span>
-        ))}
-        <span className="w-3 h-3 inline-block align-middle" style={{ background: TERRAIN_COLOR.mountain }} /> <span>горы</span>
-        <span className="w-3 h-3 inline-block align-middle" style={{ background: TERRAIN_COLOR.rift }} /> <span>разлом</span>
-      </div>
-      <div className="flex flex-wrap gap-x-5 gap-y-1 mt-1 text-xs text-muted">
-        {Object.entries(FACTION_INFO).map(([k, v]) => (
-          <span key={k} className="inline-flex items-center gap-1">
-            <span className="w-3 h-3 inline-block rounded-sm" style={{ background: v.tint.replace(/0\.\d+/, "0.9") }} /> {v.name}
+        {BRUSHES.filter((b) => b.color).map((b) => (
+          <span key={b.key} className="inline-flex items-center gap-1">
+            <span className="w-3 h-3 rounded-full inline-block" style={{ background: b.color }} /> {b.label}
           </span>
         ))}
       </div>
-
-      <p className="text-muted text-xs mt-3">
-        Клетки гор и разломов — непроходимы. Клик/протаскивание — метки; «Заметка» — клик по клетке. Территория фиксированная; если рельеф не совпал — покажи, поправлю.
+      <p className="text-muted text-xs mt-2">
+        Клик/протаскивание — метки; «Заметка» — клик по клетке. «Сетку» можно скрыть галочкой. План общий, не забудь «Сохранить».
       </p>
     </div>
   );

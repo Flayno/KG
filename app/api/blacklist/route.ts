@@ -13,12 +13,16 @@ async function accountWhere(id: number) {
 }
 
 // Add a character (and all its account's characters) to the blacklist.
+// Accepts `tags: string[]` (stored as JSON) or a legacy `reason` string.
 export async function POST(req: NextRequest) {
-  const { id, reason } = await req.json().catch(() => ({}));
+  const { id, reason, tags } = await req.json().catch(() => ({}));
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  const stored = Array.isArray(tags)
+    ? JSON.stringify([...new Set(tags.map((t: string) => String(t).trim()).filter(Boolean))])
+    : reason || null;
   await prisma.character.updateMany({
     where: await accountWhere(Number(id)),
-    data: { blacklisted: true, blacklistReason: reason || null },
+    data: { blacklisted: true, blacklistReason: stored },
   });
   return NextResponse.json({ ok: true });
 }

@@ -8,6 +8,7 @@ import { LinkAccountButton } from "@/components/LinkAccountButton";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Tabs } from "@/components/Tabs";
 import { getCharacter, getHostileTags, getAccountCount } from "@/lib/data";
+import { parseTags } from "@/lib/tags";
 import { refreshCharacter } from "@/lib/refresh";
 import { relativeOnline, relativeTime } from "@/lib/format";
 
@@ -69,8 +70,15 @@ export default async function CharacterLayout({
                 <HostileTags tags={hostileTags} />
               </div>
             )}
-            {c.blacklisted && c.blacklistReason && (
-              <div className="text-red-400 text-sm mt-2">Причина ЧС: {c.blacklistReason}</div>
+            {c.blacklisted && parseTags(c.blacklistReason).length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-danger text-xs font-medium">Чёрный список:</span>
+                {parseTags(c.blacklistReason).map((t) => (
+                  <span key={t} className="inline-flex items-center rounded-full bg-danger/15 text-red-300 ring-1 ring-danger/30 px-2.5 py-0.5 text-xs font-medium">
+                    {t}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
           <div className="w-full sm:w-auto flex flex-col gap-2 items-start">

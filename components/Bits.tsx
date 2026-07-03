@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { parseTags } from "@/lib/tags";
 
 export function Card({
   children,
@@ -176,10 +177,11 @@ export function RankBadge({ name }: { name?: string | null }) {
 }
 
 export function BlacklistMark({ reason }: { reason?: string | null }) {
+  const tags = parseTags(reason);
   return (
     <span
-      title={reason ? `Чёрный список: ${reason}` : "В чёрном списке"}
-      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold shrink-0"
+      title={tags.length ? `Чёрный список: ${tags.join(", ")}` : "В чёрном списке"}
+      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-danger text-white text-[10px] font-bold shrink-0 ring-1 ring-red-300/30"
     >
       !
     </span>

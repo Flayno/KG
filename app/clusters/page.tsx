@@ -38,9 +38,10 @@ export default async function ClustersPage({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {clusters.map((c) => (
             <Link key={c.id} href={`/clusters?cluster=${c.id}`} className="no-underline">
-              <Card className="p-4 hover:border-primary transition-colors h-full">
-                <div className="text-xl font-bold">{c.name}</div>
-                <div className="text-muted text-sm mt-1">{c.description}</div>
+              <Card className="p-5 card-hover h-full relative overflow-hidden">
+                <span className="grad-brand absolute -right-6 -top-6 w-16 h-16 rounded-full opacity-20 blur-lg" aria-hidden />
+                <div className="text-2xl font-extrabold grad-text w-fit">{c.name}</div>
+                <div className="text-muted text-sm mt-1.5">{c.description}</div>
               </Card>
             </Link>
           ))}

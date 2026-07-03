@@ -49,14 +49,19 @@ function SearchInner() {
 
   return (
     <div>
-      <PageTitle title="Поиск персонажа" subtitle="Введите ник персонажа" />
-      <input
-        autoFocus
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Например: Night..."
-        className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 outline-none focus:border-primary"
-      />
+      <PageTitle title="Поиск персонажа" subtitle="Ищет по текущему и старым именам" />
+      <div className="relative max-w-2xl">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-subtle pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+        </svg>
+        <input
+          autoFocus
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Например: Night…"
+          className="w-full glass rounded-xl pl-11 pr-4 py-3 text-[15px] outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition"
+        />
+      </div>
 
       <div className="mt-4">
         {loading && <div className="text-muted text-sm">Поиск…</div>}

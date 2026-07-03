@@ -1,34 +1,35 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   KG Companion — dark design system
-   Deep layered surfaces · blue data + amber accent · high contrast
+   KG Companion — premium dark dashboard
+   Violet↔blue brand · gold power accent · glass surfaces · glow
    ───────────────────────────────────────────────────────────── */
 :root {
-  --background: #0d1117;
-  --surface: #161b22;
-  --surface-2: #1e242c;
-  --elevated: #262d36;
-  --border: #2a313a;
-  --border-strong: #3a434e;
-  --foreground: #e6edf3;
-  --muted: #9aa4b1;
-  --subtle: #6a7381;
-  --primary: #4c9dff;
-  --primary-strong: #2f7bef;
-  --accent: #e3b341;
-  --gold: #ffd43b;
-  --silver: #c9d1d9;
+  --background: #0a0a12;
+  --surface: #14141f;
+  --surface-2: #1c1c2a;
+  --elevated: #262637;
+  --border: #262633;
+  --border-strong: #383850;
+  --foreground: #eceef6;
+  --muted: #a2a4ba;
+  --subtle: #6b6d84;
+  --primary: #a394ff;
+  --primary-strong: #7c5cff;
+  --accent: #ffcf4d;
+  --gold: #ffd44d;
+  --silver: #cbd3e1;
   --bronze: #e8956b;
-  --success: #3fb950;
-  --danger: #f85149;
+  --success: #46d18a;
+  --danger: #ff5c6c;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --ring: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow: 0 6px 24px -8px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 16px 48px -16px rgba(0, 0, 0, 0.7);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --ring: 0 0 0 2px var(--background), 0 0 0 4px color-mix(in srgb, var(--primary) 80%, transparent);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
+  --grad-brand: linear-gradient(135deg, #7c5cff 0%, #4c9dff 100%);
 }
 
 @theme inline {
@@ -44,6 +45,7 @@
   --color-primary: var(--primary);
   --color-primary-strong: var(--primary-strong);
   --color-accent: var(--accent);
+  --color-gold: var(--gold);
   --color-success: var(--success);
   --color-danger: var(--danger);
   --font-sans: var(--font-open-sans), system-ui, sans-serif;
@@ -57,8 +59,10 @@ html {
 
 body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(47, 123, 239, 0.08), transparent 60%),
+    radial-gradient(900px 520px at 12% -8%, rgba(124, 92, 255, 0.16), transparent 60%),
+    radial-gradient(820px 520px at 100% -4%, rgba(76, 157, 255, 0.12), transparent 55%),
     var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-open-sans), system-ui, sans-serif;
   min-height: 100vh;
@@ -72,16 +76,38 @@ a {
   transition: color 0.15s ease;
 }
 a:hover {
-  color: color-mix(in srgb, var(--primary) 80%, white);
+  color: color-mix(in srgb, var(--primary) 78%, white);
 }
 
-/* numeric / tabular data */
 .tabular-nums,
 .font-mono {
   font-variant-numeric: tabular-nums;
 }
 
-/* consistent, visible keyboard focus */
+/* reusable helpers */
+.grad-brand {
+  background-image: var(--grad-brand);
+}
+.grad-text {
+  background-image: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.glass {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(8px);
+}
+.card-hover {
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: 0 14px 40px -18px color-mix(in srgb, var(--primary) 55%, black);
+}
+
 :focus-visible {
   outline: none;
   box-shadow: var(--ring);
@@ -92,7 +118,6 @@ a:hover {
   background: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
-/* thin custom scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;

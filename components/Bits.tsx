@@ -9,19 +9,18 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div
-      className={`bg-surface border border-border rounded-xl shadow-sm ${className}`}
-    >
-      {children}
-    </div>
+    <div className={`glass rounded-2xl shadow ${className}`}>{children}</div>
   );
 }
 
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-5">
-      <h1 className="text-2xl sm:text-[1.7rem] font-bold tracking-tight">{title}</h1>
-      {subtitle && <p className="text-muted text-sm mt-1.5">{subtitle}</p>}
+    <div className="mb-6 flex items-start gap-3">
+      <span className="grad-brand mt-1 w-1.5 h-8 rounded-full shrink-0" aria-hidden />
+      <div>
+        <h1 className="text-2xl sm:text-[1.75rem] font-extrabold tracking-tight leading-none">{title}</h1>
+        {subtitle && <p className="text-muted text-sm mt-2">{subtitle}</p>}
+      </div>
     </div>
   );
 }
@@ -114,10 +113,10 @@ export function StatTile({
   hint?: string;
 }) {
   return (
-    <div className="bg-surface-2/60 border border-border rounded-xl px-4 py-3 transition-colors hover:border-border-strong">
+    <div className="glass rounded-2xl px-4 py-3.5 card-hover">
       <div className="text-subtle text-[11px] font-semibold uppercase tracking-wider">{label}</div>
-      <div className="text-xl font-bold mt-1 font-mono tracking-tight text-foreground">{value}</div>
-      {hint && <div className="text-muted text-xs mt-0.5 tabular-nums">{hint}</div>}
+      <div className="text-2xl font-extrabold mt-1.5 font-mono tracking-tight text-foreground">{value}</div>
+      {hint && <div className="text-muted text-xs mt-1 tabular-nums">{hint}</div>}
     </div>
   );
 }

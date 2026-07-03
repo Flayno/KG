@@ -31,7 +31,7 @@ export function CharacterTable({
           {characters.map((c, i) => (
             <tr
               key={c.id}
-              className="border-b border-border/60 hover:bg-surface-2/60 transition-colors"
+              className="border-b border-white/[0.05] hover:bg-white/[0.04] transition-colors"
             >
               <td className="py-2 pl-2 pr-1">
                 <Rank n={startRank + i} />
@@ -60,7 +60,7 @@ export function CharacterTable({
                   </Link>
                 </td>
               )}
-              <td className="py-2.5 px-1 text-right tabular-nums font-mono font-semibold text-primary">
+              <td className="py-2.5 px-1 text-right tabular-nums font-mono font-semibold text-accent">
                 {formatPower(c.maxPower)}
               </td>
               <td className="py-2 px-1 text-right tabular-nums hidden sm:table-cell">
@@ -105,7 +105,7 @@ export function AllianceTable({
           {alliances.map((a, i) => (
             <tr
               key={a.id}
-              className="border-b border-border/60 hover:bg-surface-2/60 transition-colors"
+              className="border-b border-white/[0.05] hover:bg-white/[0.04] transition-colors"
             >
               <td className="py-2 pl-2 pr-1">
                 <Rank n={startRank + i} />
@@ -127,7 +127,7 @@ export function AllianceTable({
                   </Link>
                 </td>
               )}
-              <td className="py-2.5 px-1 text-right tabular-nums font-mono font-semibold text-primary">
+              <td className="py-2.5 px-1 text-right tabular-nums font-mono font-semibold text-accent">
                 {formatPower(a.power)}
               </td>
               <td className="py-2 pl-1 pr-2 text-right tabular-nums text-muted">

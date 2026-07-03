@@ -15,7 +15,7 @@ export function AllianceMemberTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-muted text-left border-b border-border">
+          <tr className="text-subtle text-left border-b border-border text-[11px] uppercase tracking-wider">
             <th className="py-2 pl-2 pr-1 font-medium">Игрок</th>
             <th className="py-2 px-1 font-medium">Ранг</th>
             <th className="py-2 px-1 font-medium text-right">PvP индекс</th>

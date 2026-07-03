@@ -17,7 +17,7 @@ export function CharacterTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-muted text-left border-b border-border">
+          <tr className="text-subtle text-left border-b border-border text-[11px] uppercase tracking-wider">
             <th className="py-2 pl-2 pr-1 font-medium w-12">#</th>
             <th className="py-2 px-1 font-medium">Персонаж</th>
             <th className="py-2 px-1 font-medium">Альянс</th>
@@ -60,7 +60,7 @@ export function CharacterTable({
                   </Link>
                 </td>
               )}
-              <td className="py-2 px-1 text-right tabular-nums font-semibold text-primary">
+              <td className="py-2.5 px-1 text-right tabular-nums font-mono font-semibold text-primary">
                 {formatPower(c.maxPower)}
               </td>
               <td className="py-2 px-1 text-right tabular-nums hidden sm:table-cell">
@@ -93,7 +93,7 @@ export function AllianceTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-muted text-left border-b border-border">
+          <tr className="text-subtle text-left border-b border-border text-[11px] uppercase tracking-wider">
             <th className="py-2 pl-2 pr-1 font-medium w-12">#</th>
             <th className="py-2 px-1 font-medium">Альянс</th>
             {showServer && <th className="py-2 px-1 font-medium">Сервер</th>}
@@ -127,7 +127,7 @@ export function AllianceTable({
                   </Link>
                 </td>
               )}
-              <td className="py-2 px-1 text-right tabular-nums font-semibold text-primary">
+              <td className="py-2.5 px-1 text-right tabular-nums font-mono font-semibold text-primary">
                 {formatPower(a.power)}
               </td>
               <td className="py-2 pl-1 pr-2 text-right tabular-nums text-muted">

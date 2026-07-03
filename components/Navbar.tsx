@@ -20,26 +20,26 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="bg-surface border-b border-border sticky top-0 z-20">
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-surface/80 backdrop-blur-md supports-[backdrop-filter]:bg-surface/70">
       <div className="max-w-6xl mx-auto px-3 sm:px-4">
-        <div className="flex items-center h-14 gap-2">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg no-underline text-foreground">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-primary-strong text-white text-sm">
+        <div className="flex items-center gap-2 py-2.5">
+          <Link href="/" className="flex items-center gap-2.5 font-bold text-lg no-underline text-foreground group">
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-strong text-white text-sm font-extrabold shadow-sm ring-1 ring-white/10 transition-transform group-hover:scale-[1.04]">
               KG
             </span>
-            <span className="hidden sm:inline">Companion</span>
+            <span className="hidden sm:inline tracking-tight">Companion</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 ml-4">
+          <nav className="hidden md:flex items-center gap-0.5 ml-3">
             {NAV.map((item) => {
-              const active = pathname.startsWith(item.href);
+              const active = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3 py-1.5 rounded text-sm no-underline transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium no-underline transition-colors ${
                     active
-                      ? "bg-surface-2 text-foreground"
+                      ? "bg-elevated text-foreground"
                       : "text-muted hover:text-foreground hover:bg-surface-2"
                   }`}
                 >

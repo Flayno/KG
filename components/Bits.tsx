@@ -10,7 +10,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`bg-surface border border-border rounded-lg ${className}`}
+      className={`bg-surface border border-border rounded-xl shadow-sm ${className}`}
     >
       {children}
     </div>
@@ -19,9 +19,9 @@ export function Card({
 
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-4">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      {subtitle && <p className="text-muted text-sm mt-1">{subtitle}</p>}
+    <div className="mb-5">
+      <h1 className="text-2xl sm:text-[1.7rem] font-bold tracking-tight">{title}</h1>
+      {subtitle && <p className="text-muted text-sm mt-1.5">{subtitle}</p>}
     </div>
   );
 }
@@ -83,15 +83,22 @@ export function AllianceTag({
   );
 }
 
-const MEDAL = ["#ffd43b", "#ced4da", "#e8956b"];
+const MEDAL = [
+  "bg-amber-400/15 text-amber-300 ring-amber-400/30",
+  "bg-slate-300/15 text-slate-200 ring-slate-300/30",
+  "bg-orange-400/15 text-orange-300 ring-orange-400/30",
+];
 
 export function Rank({ n }: { n: number }) {
-  const color = n <= 3 ? MEDAL[n - 1] : undefined;
+  if (n <= 3) {
+    return (
+      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ring-1 ${MEDAL[n - 1]}`}>
+        {n}
+      </span>
+    );
+  }
   return (
-    <span
-      className="inline-flex items-center justify-center min-w-7 font-semibold tabular-nums"
-      style={color ? { color } : { color: "var(--muted)" }}
-    >
+    <span className="inline-flex items-center justify-center min-w-6 text-subtle font-semibold tabular-nums">
       {n}
     </span>
   );
@@ -107,20 +114,20 @@ export function StatTile({
   hint?: string;
 }) {
   return (
-    <div className="bg-surface-2 rounded-lg px-4 py-3">
-      <div className="text-muted text-xs uppercase tracking-wide">{label}</div>
-      <div className="text-xl font-bold mt-0.5 tabular-nums">{value}</div>
-      {hint && <div className="text-muted text-xs mt-0.5">{hint}</div>}
+    <div className="bg-surface-2/60 border border-border rounded-xl px-4 py-3 transition-colors hover:border-border-strong">
+      <div className="text-subtle text-[11px] font-semibold uppercase tracking-wider">{label}</div>
+      <div className="text-xl font-bold mt-1 font-mono tracking-tight text-foreground">{value}</div>
+      {hint && <div className="text-muted text-xs mt-0.5 tabular-nums">{hint}</div>}
     </div>
   );
 }
 
 const TAG_COLORS: Record<string, string> = {
-  gray: "bg-surface-2 text-muted",
-  gold: "bg-yellow-500 text-black",
-  orange: "bg-orange-500 text-white",
-  red: "bg-red-600 text-white",
-  blue: "bg-primary-strong text-white",
+  gray: "bg-surface-2 text-muted ring-1 ring-border",
+  gold: "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/25",
+  orange: "bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/30",
+  red: "bg-red-500/15 text-red-300 ring-1 ring-red-500/30",
+  blue: "bg-primary/15 text-primary ring-1 ring-primary/30",
 };
 
 export function Tag({
@@ -163,7 +170,7 @@ export function HostileTags({
 export function RankBadge({ name }: { name?: string | null }) {
   if (!name) return null;
   return (
-    <span className="inline-block text-xs font-bold px-1.5 py-0.5 rounded bg-primary-strong text-white">
+    <span className="inline-block text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-primary/15 text-primary ring-1 ring-primary/25">
       {name}
     </span>
   );

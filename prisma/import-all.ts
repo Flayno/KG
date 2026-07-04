@@ -75,11 +75,11 @@ async function importStructure(): Promise<number[]> {
 
 async function importServer(serverId: number, counters: { a: number; c: number }) {
   const [aj, cj] = await Promise.all([
-    getJSON(`/server/${serverId}/alliances`),
-    getJSON(`/server/${serverId}/characters`),
+    getJSON(`/get/server/${serverId}/alliances`),
+    getJSON(`/get/server/${serverId}/characters`),
   ]);
-  const alliances: AnyObj[] = aj.alliances ?? [];
-  const chars: AnyObj[] = cj.characters ?? [];
+  const alliances: AnyObj[] = Array.isArray(aj) ? aj : (aj.alliances ?? []);
+  const chars: AnyObj[] = Array.isArray(cj) ? cj : (cj.characters ?? []);
 
   await ensureFlags(chars.map((c) => c.flag).filter(Boolean));
 

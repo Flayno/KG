@@ -104,16 +104,16 @@ async function upsertCharacter(c: AnyObj, serverId: number, allianceId: string |
 
 async function importCharacter(id: number) {
   console.log(`\n→ importing character ${id}`);
-  const cj = await getJSON(`/character/${id}`);
+  const cj = await getJSON(`/get/character/${id}?update=1`);
   const c = cj.character ?? cj;
   if (!c?.id) throw new Error("no character in response");
 
-  const serverId = await ensureServer(c.server);
+  const serverId = c.server ? await ensureServer(c.server) : c.serverId;
 
   let allianceId: string | null = null;
   if (c.alliance?.id) {
     allianceId = c.alliance.id;
-    const aj = await getJSON(`/alliance/${allianceId}`);
+    const aj = await getJSON(`/get/alliance/${allianceId}`);
     const a = aj.alliance ?? aj;
     // Make sure the alliance's server exists too (usually the same).
     if (aj.server) await ensureServer(aj.server);

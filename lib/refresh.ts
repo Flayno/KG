@@ -161,10 +161,15 @@ async function syncCharacterActivity(id: number, current: AnyObj) {
   ]);
 }
 
-/** Store the character's history: past alliance memberships + past nicknames. */
-export async function syncCharacterHistory(id: number) {
-  const j = await getJSON(`/character/${id}/history`);
-  const arr = Array.isArray(j) ? (j as AnyObj[]) : [];
+/** Store the character's history: past alliance memberships + past nicknames.
+ *  Pass `preloaded` (the `history` array from /api/get/character) to avoid a 2nd call. */
+export async function syncCharacterHistory(id: number, preloaded?: AnyObj[] | null) {
+  let arr: AnyObj[];
+  if (preloaded) arr = preloaded;
+  else {
+    const j = await getJSON(`/character/${id}/history`);
+    arr = Array.isArray(j) ? (j as AnyObj[]) : [];
+  }
 
   // alliance memberships (dedupe by uuid, keep latest)
   const byUuid = new Map<string, AnyObj>();
@@ -208,7 +213,8 @@ export async function refreshCharacter(id: number, force = false): Promise<boole
   const existing = await prisma.character.findUnique({ where: { id }, select: { detailSyncedAt: true } });
   if (!force && isFresh(existing?.detailSyncedAt)) return false;
 
-  const j = await getJSON(`/character/${id}`);
+  // Official endpoint with update=1 → real-time data pulled from the game by the source.
+  const j = await getJSON(`/get/character/${id}?update=1`);
   const c = j?.character;
   if (!c?.id) return false;
 
@@ -216,7 +222,7 @@ export async function refreshCharacter(id: number, force = false): Promise<boole
   const allianceId = await ensureAllianceRef(c.alliance, serverId);
   await upsertCharacter(c, serverId, allianceId);
   await syncCharacterActivity(id, c); // real historical chart from the activity feed
-  await syncCharacterHistory(id); // alliance membership history (for hostile tags)
+  await syncCharacterHistory(id, j?.history); // history comes inline with the character
   await syncLinked(id); // other characters on the same account
   await prisma.character.update({ where: { id }, data: { detailSyncedAt: new Date() } });
   return true;
@@ -288,11 +294,11 @@ export async function refreshAlliance(id: string, force = false): Promise<{ refr
   const existing = await prisma.alliance.findUnique({ where: { id }, select: { refreshedAt: true } });
   if (!force && isFresh(existing?.refreshedAt)) return { refreshed: false, members: 0 };
 
-  const j = await getJSON(`/alliance/${id}`);
-  const a = j?.alliance;
-  if (!a) return { refreshed: false, members: 0 };
+  // Official endpoint with update=1 → real-time; alliance is at the top level.
+  const a = await getJSON(`/get/alliance/${id}?update=1`);
+  if (!a?.id) return { refreshed: false, members: 0 };
 
-  const serverId = (await ensureServer(j.server)) ?? a.serverId;
+  const serverId = a.serverId; // the alliance's server already exists from import
   const members: AnyObj[] = a.members ?? [];
   const memberCount = typeof a.members === "number" ? a.members : (a.membersCount ?? members.length);
 

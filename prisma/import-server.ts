@@ -83,8 +83,8 @@ async function importServer(serverId: number) {
   await ensureServer(server);
 
   // 1) alliances
-  const aj = await getJSON(`/server/${serverId}/alliances`);
-  const alliances: AnyObj[] = aj.alliances ?? [];
+  const aj = await getJSON(`/get/server/${serverId}/alliances`);
+  const alliances: AnyObj[] = Array.isArray(aj) ? aj : (aj.alliances ?? []);
   console.log(`  alliances: ${alliances.length}`);
   const known = new Set<string>();
   for (const a of alliances) {
@@ -93,8 +93,8 @@ async function importServer(serverId: number) {
   }
 
   // 2) characters
-  const cj = await getJSON(`/server/${serverId}/characters`);
-  const chars: AnyObj[] = cj.characters ?? [];
+  const cj = await getJSON(`/get/server/${serverId}/characters`);
+  const chars: AnyObj[] = Array.isArray(cj) ? cj : (cj.characters ?? []);
   console.log(`  characters: ${chars.length}`);
 
   // Create stub alliances for any referenced but missing alliance.

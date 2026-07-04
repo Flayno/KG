@@ -45,8 +45,7 @@ export default async function HomePage() {
             <AllianceEmblem src={a.logoImage} size={84} />
           </Link>
           <div className="flex-1 min-w-0">
-            <div className="text-subtle text-xs font-semibold uppercase tracking-wider">Мой альянс</div>
-            <h1 className="text-3xl font-extrabold tracking-tight mt-0.5 flex flex-wrap items-center gap-2">
+            <h1 className="text-3xl font-extrabold tracking-tight flex flex-wrap items-center gap-2">
               <Link href={`/alliance/${id}`} className="no-underline text-foreground hover:text-primary">
                 [{a.label}] <span className="grad-text">{a.name}</span>
               </Link>

@@ -7,7 +7,8 @@ import { Avatar } from "./Avatar";
 import { formatPower } from "@/lib/format";
 import type { CharacterView } from "@/lib/types";
 
-export function HeaderSearch() {
+export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) {
+  const hero = variant === "hero";
   const [q, setQ] = useState("");
   const [results, setResults] = useState<CharacterView[]>([]);
   const [open, setOpen] = useState(false);
@@ -54,7 +55,12 @@ export function HeaderSearch() {
   }
 
   return (
-    <div ref={boxRef} className="relative flex-1 max-w-xs">
+    <div ref={boxRef} className={hero ? "relative w-full" : "relative flex-1 max-w-xs"}>
+      {hero && (
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-subtle pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+        </svg>
+      )}
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -65,8 +71,12 @@ export function HeaderSearch() {
             else router.push(`/character/search?q=${encodeURIComponent(q)}`);
           }
         }}
-        placeholder="Поиск игрока…"
-        className="w-full bg-surface-2 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:border-primary"
+        placeholder={hero ? "Поиск игрока по имени…" : "Поиск игрока…"}
+        className={
+          hero
+            ? "w-full glass rounded-xl pl-11 pr-4 py-3.5 text-[15px] outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition"
+            : "w-full bg-surface-2 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:border-primary"
+        }
       />
       {open && results.length > 0 && (
         <div className="absolute top-full mt-1 left-0 right-0 bg-surface border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto z-30">

@@ -104,20 +104,31 @@ export function Rank({ n }: { n: number }) {
   );
 }
 
+const TILE_ACCENT: Record<string, string> = {
+  green: "text-success",
+  gold: "text-accent",
+  violet: "text-primary",
+  none: "text-foreground",
+};
+
 export function StatTile({
   label,
   value,
   hint,
+  accent = "none",
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
+  accent?: "green" | "gold" | "violet" | "none";
 }) {
   return (
-    <div className="glass rounded-2xl px-4 py-3.5 card-hover">
-      <div className="text-subtle text-[11px] font-semibold uppercase tracking-wider">{label}</div>
-      <div className="text-2xl font-extrabold mt-1.5 font-mono tracking-tight text-foreground">{value}</div>
-      {hint && <div className="text-muted text-xs mt-1 tabular-nums">{hint}</div>}
+    <div className="glass rounded-2xl px-5 py-4 card-hover h-full min-h-[118px] flex flex-col">
+      <span className="text-subtle text-[11px] font-semibold uppercase tracking-wider">{label}</span>
+      <div className="flex-1 flex items-center">
+        <span className={`text-[2.5rem] sm:text-[2.9rem] leading-none font-extrabold font-mono tracking-tight ${TILE_ACCENT[accent]}`}>{value}</span>
+      </div>
+      {hint && <div className="text-muted text-xs tabular-nums">{hint}</div>}
     </div>
   );
 }
@@ -128,6 +139,7 @@ const TAG_COLORS: Record<string, string> = {
   orange: "bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/30",
   red: "bg-red-500/15 text-red-300 ring-1 ring-red-500/30",
   blue: "bg-primary/15 text-primary ring-1 ring-primary/30",
+  green: "bg-success/15 text-success ring-1 ring-success/30",
 };
 
 export function Tag({
@@ -136,7 +148,7 @@ export function Tag({
   title,
 }: {
   children: ReactNode;
-  color?: "gray" | "gold" | "orange" | "red" | "blue";
+  color?: "gray" | "gold" | "orange" | "red" | "blue" | "green";
   title?: string;
 }) {
   return (

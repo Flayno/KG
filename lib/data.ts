@@ -159,6 +159,23 @@ export async function getAllianceMembers(id: string) {
   return { characters: characters.map((c) => characterDTO(c)) };
 }
 
+/**
+ * PvP damage each character dealt in the last `days` days (sum of per-date
+ * diffDamage from snapshots) — a real "recent PvP activity" signal.
+ */
+export async function getRecentPvpDamage(ids: number[], days = 7): Promise<Map<number, bigint>> {
+  const result = new Map<number, bigint>();
+  if (ids.length === 0) return result;
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const rows = await prisma.characterSnapshot.groupBy({
+    by: ["characterId"],
+    where: { characterId: { in: ids }, date: { gte: cutoff } },
+    _sum: { diffDamage: true },
+  });
+  for (const r of rows) result.set(r.characterId, r._sum.diffDamage ?? 0n);
+  return result;
+}
+
 /** Set of alliance ids that currently have at least one blacklisted member. */
 export async function blacklistedAllianceIds(): Promise<Set<string>> {
   const rows = await prisma.character.findMany({

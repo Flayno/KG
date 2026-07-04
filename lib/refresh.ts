@@ -134,25 +134,51 @@ function isFresh(refreshedAt: Date | null | undefined) {
  */
 async function syncCharacterActivity(id: number, current: AnyObj) {
   const j = await getJSON(`/character/${id}/activity`);
-  const series: AnyObj[] = j?.power ?? [];
+  const powerSeries: AnyObj[] = j?.power ?? [];
+  const pvpSeries: AnyObj[] = j?.pvp ?? []; // per-date PvP: rate, pvpDamage, diffDamage
 
-  // Merge by date; include today's live values so the chart ends at "now".
+  const allianceId = current.alliance?.id ?? null;
   const byDate = new Map<string, AnyObj>();
-  for (const p of series) {
-    if (!p?.date) continue;
-    byDate.set(p.date, {
-      characterId: id, date: p.date,
-      power: big(p.power), maxPower: big(p.maxPower), level: p.level ?? 0,
-      pvpDamage: 0n, allianceId: current.alliance?.id ?? null,
-    });
-  }
-  byDate.set(today(), {
-    characterId: id, date: today(),
-    power: big(current.power), maxPower: big(current.maxPower), level: current.level ?? 0,
-    pvpDamage: big(current.pvpDamage), allianceId: current.alliance?.id ?? null,
-  });
+  const row = (date: string) => {
+    let r = byDate.get(date);
+    if (!r) {
+      r = {
+        characterId: id, date,
+        power: 0n, maxPower: 0n, level: 0,
+        pvpDamage: 0n, pvpRate: 0, diffDamage: 0n, allianceId,
+      };
+      byDate.set(date, r);
+    }
+    return r;
+  };
 
-  const rows = [...byDate.values()];
+  // power/level history
+  for (const p of powerSeries) {
+    if (!p?.date) continue;
+    const r = row(p.date);
+    r.power = big(p.power); r.maxPower = big(p.maxPower); r.level = p.level ?? 0;
+  }
+  // PvP history (the important bit — real activity per date)
+  for (const p of pvpSeries) {
+    if (!p?.date) continue;
+    const r = row(p.date);
+    r.pvpDamage = big(p.pvpDamage); r.pvpRate = p.rate ?? 0; r.diffDamage = big(p.diffDamage);
+    if (r.maxPower === 0n && p.maxPower) r.maxPower = big(p.maxPower);
+  }
+  // today's live values so the series ends at "now"
+  const t = row(today());
+  t.power = big(current.power); t.maxPower = big(current.maxPower); t.level = current.level ?? 0;
+  t.pvpDamage = big(current.pvpDamage);
+  if (current.pvpRate) t.pvpRate = current.pvpRate;
+
+  // carry power/level forward onto PvP-only dates that lack it (keeps rows valid)
+  const rows = [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+  let lp = 0n, lm = 0n, ll = 0;
+  for (const r of rows) {
+    if (r.power > 0n) { lp = r.power; lm = r.maxPower; ll = r.level; }
+    else if (lp > 0n) { r.power = lp; if (r.maxPower === 0n) r.maxPower = lm; if (!r.level) r.level = ll; }
+  }
+
   await prisma.$transaction([
     prisma.characterSnapshot.deleteMany({ where: { characterId: id } }),
     ...Array.from({ length: Math.ceil(rows.length / 500) }, (_, i) =>

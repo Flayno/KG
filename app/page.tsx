@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, StatTile, AllianceEmblem, Tag } from "@/components/Bits";
+import { IconWrench } from "@/components/icons";
 import { Awards } from "@/components/Awards";
 import { AllianceMemberTable } from "@/components/AllianceMemberTable";
 import { HeaderSearch } from "@/components/HeaderSearch";
-import { getAlliance, getAllianceMembers, getHostileTagsFor, getFormerCount } from "@/lib/data";
+import { getAlliance, getAllianceMembers, getHostileTagsFor, getFormerCount, getRecentPvpDamage } from "@/lib/data";
 import { refreshAlliance, ensureMemberHistories } from "@/lib/refresh";
 import { formatPower } from "@/lib/format";
 import { HOME_ALLIANCE_ID } from "@/lib/config";
@@ -20,9 +21,11 @@ export default async function HomePage() {
 
   const { characters } = await getAllianceMembers(id);
   await ensureMemberHistories(characters.map((c) => c.id));
-  const [tagsById, formerCount] = await Promise.all([
-    getHostileTagsFor(characters.map((c) => c.id)),
+  const ids = characters.map((c) => c.id);
+  const [tagsById, formerCount, recentPvpById] = await Promise.all([
+    getHostileTagsFor(ids),
     getFormerCount(id),
+    getRecentPvpDamage(ids, 7),
   ]);
   const avg = formatPower(Number(a.power) / Math.max(1, characters.length));
 
@@ -32,52 +35,54 @@ export default async function HomePage() {
       <HeaderSearch variant="hero" />
 
       {/* alliance hero */}
-      <Card className="p-5 sm:p-6 relative overflow-hidden">
-        <span className="grad-brand absolute -right-16 -top-16 w-56 h-56 rounded-full opacity-[0.12] blur-2xl" aria-hidden />
+      <div className="hero-card p-5 sm:p-7">
         <div className="flex flex-col sm:flex-row items-start gap-5 relative">
-          <Link href={`/alliance/${id}`} className="shrink-0">
-            <AllianceEmblem src={a.logoImage} size={84} />
+          <Link href={`/alliance/${id}`} className="shrink-0 emblem-ring">
+            <AllianceEmblem src={a.logoImage} size={96} />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-extrabold tracking-tight flex flex-wrap items-center gap-2">
-              <Link href={`/alliance/${id}`} className="no-underline text-foreground hover:text-primary">
-                [{a.label}] <span className="grad-text">{a.name}</span>
+            <h1 className="text-3xl sm:text-[2.1rem] font-extrabold tracking-tight leading-tight flex flex-wrap items-center gap-2.5">
+              <Link href={`/alliance/${id}`} className="no-underline grad-green-flow hover:opacity-90 transition-opacity">
+                [{a.label}] {a.name}
               </Link>
               {a.hostile && <Tag color="orange">Недружественный</Tag>}
             </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-2.5 text-sm">
-              <Link href={`/server/${a.serverId}`} className="bg-surface-2 rounded-lg px-2.5 py-1 text-muted no-underline hover:text-foreground">
-                Сервер #{a.serverId}
+            <div className="flex flex-wrap items-center gap-2 mt-3.5">
+              <Link href={`/server/${a.serverId}`} className="chip no-underline">
+                <span className="w-1.5 h-1.5 rounded-full bg-success" aria-hidden />
+                Сервер {a.serverId}
               </Link>
-              <span className="bg-surface-2 rounded-lg px-2.5 py-1 text-muted">⚔ Тех {a.techLevel}</span>
+              <span className="chip">
+                <IconWrench className="w-3.5 h-3.5 text-subtle" />
+                Тех {a.techLevel}
+              </span>
               {(a.kvkWins ?? 0) > 0 && (
-                <span className="bg-surface-2 rounded-lg px-2.5 py-1 inline-flex items-center" title={`Победы BL: ${a.kvkWins}`}>
-                  <Awards wins={a.kvkWins ?? 0} size={15} />
+                <span className="chip" title={`Победы BL: ${a.kvkWins}`}>
+                  <Awards wins={a.kvkWins ?? 0} size={14} />
                 </span>
               )}
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Суммарная мощь" value={formatPower(a.power)} />
+        <StatTile label="Суммарная мощь" value={formatPower(a.power)} accent="green" />
         <StatTile label="Состав" value={`${characters.length}/${a.maxMembers}`} />
-        <StatTile label="Средняя мощь" value={avg} />
-        <Link href={`/alliance/${id}/former`} className="no-underline">
-          <StatTile label="Бывших игроков" value={formerCount} hint="кто ушёл — нажми" />
+        <StatTile label="Средняя мощь" value={avg} accent="gold" />
+        <Link href={`/alliance/${id}/former`} className="no-underline cursor-pointer">
+          <StatTile label="Бывших игроков" value={formerCount} hint="кто ушёл — нажми →" accent="violet" />
         </Link>
       </div>
 
       {/* roster */}
       <div>
-        <div className="flex items-center justify-between mb-2.5">
-          <h2 className="text-lg font-bold tracking-tight">Состав ({characters.length})</h2>
+        <div className="flex items-center justify-end mb-2.5">
           <Link href={`/alliance/${id}`} className="text-sm">Открыть альянс →</Link>
         </div>
         <Card className="p-2">
-          <AllianceMemberTable characters={characters as CharacterView[]} tagsById={tagsById} />
+          <AllianceMemberTable characters={characters as CharacterView[]} tagsById={tagsById} recentPvpById={recentPvpById} />
         </Card>
       </div>
     </div>

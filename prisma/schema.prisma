@@ -125,6 +125,8 @@ model CharacterSnapshot {
   maxPower    BigInt
   level       Int
   pvpDamage   BigInt    @default(0)
+  pvpRate     Float     @default(0) // PvP index (rate) at this date
+  diffDamage  BigInt    @default(0) // PvP damage gained in this period (activity)
   allianceId  String?
 
   @@index([characterId, date])

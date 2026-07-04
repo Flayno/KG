@@ -94,6 +94,26 @@ a:hover {
   background-clip: text;
   color: transparent;
 }
+@keyframes grad-flow {
+  0%   { background-position: 0% 50%; }
+  25%  { background-position: 50% 100%; }
+  50%  { background-position: 100% 50%; }
+  75%  { background-position: 50% 0%; }
+  100% { background-position: 0% 50%; }
+}
+.grad-green-flow {
+  background-image: linear-gradient(
+    115deg,
+    #007f5f, #2b9348, #55a630, #80b918,
+    #aacc00, #bfd200, #d4d700, #dddf00,
+    #eeef20, #dddf00, #aacc00, #55a630, #007f5f
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: grad-flow 9s ease-in-out infinite;
+}
 .glass {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -106,6 +126,61 @@ a:hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
   box-shadow: 0 14px 40px -18px color-mix(in srgb, var(--primary) 55%, black);
+}
+
+/* ── Dimensional layering (elevation scale) ─────────────── */
+:root {
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --elevation-2: 0 6px 18px -8px rgba(0, 0, 0, 0.55);
+  --elevation-3: 0 22px 50px -22px rgba(0, 0, 0, 0.7);
+  --elevation-4: 0 34px 74px -26px rgba(0, 0, 0, 0.8);
+}
+
+/* Premium alliance hero card — green-tinted glass with depth */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(70, 209, 138, 0.05), rgba(255, 255, 255, 0.018)),
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--elevation-3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(115% 90% at 0% 0%, rgba(70, 209, 138, 0.16), transparent 55%);
+}
+
+/* Soft green halo behind the emblem (no outline) */
+.emblem-ring {
+  position: relative;
+  padding: 4px;
+  background: radial-gradient(circle at 50% 45%, rgba(70, 209, 138, 0.18), transparent 68%);
+}
+
+/* Glassy metadata chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+a.chip:hover {
+  color: var(--foreground);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 :focus-visible {

@@ -82,7 +82,9 @@ export default function BlacklistPage() {
         {rows.map((r) => (
           <div
             key={r.id}
-            className="glass rounded-2xl px-3.5 sm:px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-2"
+            className={`rounded-2xl border border-border bg-surface-2/50 px-3.5 sm:px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-2 ${
+              adding === r.id ? "relative z-30" : ""
+            }`}
           >
             <Avatar src={r.avatar} name={r.nickname} size={40} rounded="rounded-xl" />
             <Flag flag={r.flag} />
@@ -139,7 +141,7 @@ export default function BlacklistPage() {
                           <button
                             key={t}
                             onClick={() => addTag(r.id, t)}
-                            className="text-xs px-2.5 py-1 rounded-lg bg-surface-2 ring-1 ring-border text-foreground hover:bg-primary-strong/25 hover:text-primary transition-colors"
+                            className="text-xs px-2.5 py-1 rounded-lg bg-danger/10 ring-1 ring-danger/25 text-red-300 hover:bg-danger/25 hover:text-red-200 transition-colors"
                           >
                             {t}
                           </button>
@@ -147,7 +149,6 @@ export default function BlacklistPage() {
                       </div>
                       <div className="flex gap-1.5">
                         <input
-                          autoFocus
                           value={custom}
                           onChange={(e) => setCustom(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") addTag(r.id, custom); }}

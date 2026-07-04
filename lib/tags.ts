@@ -16,7 +16,8 @@ export function stringifyTags(tags: string[]): string {
   return JSON.stringify([...new Set(tags.map((t) => t.trim()).filter(Boolean))]);
 }
 
-export const PRESET_TAGS = [
+// Standard tag catalog. Blacklist uses the negative set (all reasons are negative).
+export const NEGATIVE_TAGS = [
   "Недружественный игрок",
   "Предатель",
   "Помогал секте",
@@ -27,3 +28,14 @@ export const PRESET_TAGS = [
   "Токсик",
   "Слил альянс",
 ];
+
+export const POSITIVE_TAGS = [
+  "Активный игрок",
+  "Надёжный",
+  "Хороший боец",
+  "Донатер",
+  "Помогает альянсу",
+];
+
+// Blacklist preset tags = the negative catalog.
+export const PRESET_TAGS = NEGATIVE_TAGS;

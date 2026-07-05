@@ -185,7 +185,8 @@ async function syncCharacterActivity(id: number, current: AnyObj) {
   await prisma.$transaction([
     prisma.characterSnapshot.deleteMany({ where: { characterId: id } }),
     ...Array.from({ length: Math.ceil(rows.length / 500) }, (_, i) =>
-      prisma.characterSnapshot.createMany({ data: rows.slice(i * 500, i * 500 + 500) })
+      // rows are built as loose objects above; shape matches the model.
+      prisma.characterSnapshot.createMany({ data: rows.slice(i * 500, i * 500 + 500) as never })
     ),
   ]);
 }
@@ -228,9 +229,9 @@ export async function syncCharacterHistory(id: number, preloaded?: AnyObj[] | nu
   const nameRows = [...byName.values()];
   await prisma.$transaction([
     prisma.characterAllianceLink.deleteMany({ where: { characterId: id } }),
-    ...(allianceRows.length ? [prisma.characterAllianceLink.createMany({ data: allianceRows })] : []),
+    ...(allianceRows.length ? [prisma.characterAllianceLink.createMany({ data: allianceRows as never })] : []),
     prisma.characterNameHistory.deleteMany({ where: { characterId: id } }),
-    ...(nameRows.length ? [prisma.characterNameHistory.createMany({ data: nameRows })] : []),
+    ...(nameRows.length ? [prisma.characterNameHistory.createMany({ data: nameRows as never })] : []),
     prisma.character.update({ where: { id }, data: { historySyncedAt: new Date() } }),
   ]);
 }

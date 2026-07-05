@@ -56,7 +56,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
 
   // Shade each BL active window overlapping the data, on the real time axis
   // (equal-width 3-week bands, rest weeks are real gaps).
-  const markArea = useMemo(() => {
+  const markArea = useMemo<Record<string, unknown> | undefined>(() => {
     if (dates.length === 0) return undefined;
     const t0 = Date.parse(`${dates[0]}T00:00:00Z`);
     const t1 = Date.parse(`${dates[dates.length - 1]}T00:00:00Z`);
@@ -97,8 +97,8 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
     };
   }, [dates]);
 
-  const option = useMemo<echarts.EChartsOption>(() => {
-    const base: echarts.EChartsOption = {
+  const option = useMemo(() => {
+    const base = {
       backgroundColor: "transparent",
       textStyle: { color: COLORS.text, fontFamily: "inherit" },
       grid: { top: 28, left: 8, right: 8, bottom: 74, containLabel: true },
@@ -108,7 +108,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
         backgroundColor: "#1c1c2a",
         borderColor: "rgba(255,255,255,0.1)",
         textStyle: { color: "#eceef6" },
-        formatter: (params: unknown) => {
+        formatter: (params: any) => {
           const arr = (Array.isArray(params) ? params : [params]) as { axisValueLabel?: string; axisValue: number; seriesName: string; value: [number, number] | number; color: string }[];
           const head = arr[0]?.axisValueLabel ?? new Date(arr[0]?.axisValue).toISOString().slice(0, 10);
           const lines = arr.map((p) => {
@@ -194,7 +194,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
     if (view !== "chart" || !elRef.current) return;
     const chart = chartRef.current ?? echarts.init(elRef.current, undefined, { renderer: "canvas" });
     chartRef.current = chart;
-    chart.setOption(option, true);
+    chart.setOption(option as echarts.EChartsOption, true);
 
     const t0 = dates.length ? Date.parse(`${dates[0]}T00:00:00Z`) : 0;
     const t1 = dates.length ? Date.parse(`${dates[dates.length - 1]}T00:00:00Z`) : 0;
@@ -212,7 +212,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
             maxInterval: mode ? DAY_MS : null,
             axisLabel: { formatter: axisFmt, interval: mode ? 0 : "auto", hideOverlap: !mode },
           },
-        });
+        } as unknown as echarts.EChartsOption);
       }
     };
     chart.on("datazoom", onZoom);

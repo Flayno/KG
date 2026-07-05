@@ -79,6 +79,20 @@ async function ensureServer(server: AnyObj | null | undefined) {
   return server.id as number;
 }
 
+/**
+ * Guarantee a Server row exists so alliance/character FKs hold even when we only
+ * know a serverId (e.g. from an alliance payload) and the server wasn't imported.
+ * Creates a placeholder cluster/segment chain the first time.
+ */
+async function ensureServerId(serverId: number | null | undefined) {
+  if (!serverId) return;
+  const exists = await prisma.server.findUnique({ where: { id: serverId }, select: { id: true } });
+  if (exists) return;
+  await prisma.cluster.upsert({ where: { id: 0 }, create: { id: 0, name: "", description: "" }, update: {} });
+  await prisma.segment.upsert({ where: { id: 0 }, create: { id: 0, season: 0, name: "", clusterId: 0 }, update: {} });
+  await prisma.server.upsert({ where: { id: serverId }, create: { id: serverId, season: 0, segmentId: 0 }, update: {} });
+}
+
 async function ensureAllianceRef(ref: AnyObj | null | undefined, serverId: number) {
   if (!ref?.id) return null;
   await prisma.alliance.upsert({
@@ -249,6 +263,7 @@ export async function refreshCharacter(id: number, force = false): Promise<boole
   if (!c?.id) return false;
 
   const serverId = (await ensureServer(c.server)) ?? c.serverId;
+  await ensureServerId(serverId); // fallback if the payload lacked full server info
   const allianceId = await ensureAllianceRef(c.alliance, serverId);
   await upsertCharacter(c, serverId, allianceId);
   await syncCharacterActivity(id, c); // real historical chart from the activity feed
@@ -328,7 +343,8 @@ export async function refreshAlliance(id: string, force = false): Promise<{ refr
   const a = await getJSON(`/get/alliance/${id}?update=1`);
   if (!a?.id) return { refreshed: false, members: 0 };
 
-  const serverId = a.serverId; // the alliance's server already exists from import
+  const serverId = a.serverId;
+  await ensureServerId(serverId); // create the server if it wasn't imported (fresh DB)
   const members: AnyObj[] = a.members ?? [];
   const memberCount = typeof a.members === "number" ? a.members : (a.membersCount ?? members.length);
 

@@ -5,7 +5,8 @@ import { IconWrench } from "@/components/icons";
 import { Awards } from "@/components/Awards";
 import { AllianceMemberTable } from "@/components/AllianceMemberTable";
 import { HeaderSearch } from "@/components/HeaderSearch";
-import { getAlliance, getAllianceMembers, getHostileTagsFor, getFormerCount, getRecentPvpDamage } from "@/lib/data";
+import { getAlliance, getAllianceMembers, getHostileTagsFor, getFormerCount, getSeasonPvpDamage } from "@/lib/data";
+import { blStatus, seasonNumberAt, formatDaysLeft } from "@/lib/bl";
 import { refreshAlliance, ensureMemberHistories } from "@/lib/refresh";
 import { formatPower } from "@/lib/format";
 import { HOME_ALLIANCE_ID } from "@/lib/config";
@@ -22,10 +23,12 @@ export default async function HomePage() {
   const { characters } = await getAllianceMembers(id);
   await ensureMemberHistories(characters.map((c) => c.id));
   const ids = characters.map((c) => c.id);
-  const [tagsById, formerCount, recentPvpById] = await Promise.all([
+  const season = seasonNumberAt();
+  const bl = blStatus();
+  const [tagsById, formerCount, seasonPvpById] = await Promise.all([
     getHostileTagsFor(ids),
     getFormerCount(id),
-    getRecentPvpDamage(ids, 7),
+    getSeasonPvpDamage(ids, season),
   ]);
   const avg = formatPower(Number(a.power) / Math.max(1, characters.length));
 
@@ -61,6 +64,12 @@ export default async function HomePage() {
                   <Awards wins={a.kvkWins ?? 0} size={14} />
                 </span>
               )}
+              <span className="chip" title="Огненная экспедиция (BL)">
+                <span className={`w-1.5 h-1.5 rounded-full ${bl.phase === "active" ? "bg-danger animate-pulse" : "bg-subtle"}`} aria-hidden />
+                {bl.phase === "active"
+                  ? `BL сезон ${bl.season} · до конца ${formatDaysLeft(bl.msToNext)}`
+                  : `BL отдых · до сезона ${bl.nextSeason}: ${formatDaysLeft(bl.msToNext)}`}
+              </span>
             </div>
           </div>
         </div>
@@ -82,7 +91,7 @@ export default async function HomePage() {
           <Link href={`/alliance/${id}`} className="text-sm">Открыть альянс →</Link>
         </div>
         <Card className="p-2">
-          <AllianceMemberTable characters={characters as CharacterView[]} tagsById={tagsById} recentPvpById={recentPvpById} />
+          <AllianceMemberTable characters={characters as CharacterView[]} tagsById={tagsById} pvpById={seasonPvpById} pvpLabel={`PvP · сезон ${season}`} />
         </Card>
       </div>
     </div>

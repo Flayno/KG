@@ -158,11 +158,14 @@ async function syncCharacterActivity(id: number, current: AnyObj) {
     const r = row(p.date);
     r.power = big(p.power); r.maxPower = big(p.maxPower); r.level = p.level ?? 0;
   }
-  // PvP history (the important bit — real activity per date)
+  // PvP history (the important bit — real activity per date).
+  // The game's cumulative pvpDamage resets once per BL cycle, which shows up as a
+  // negative diffDamage on the reset day — that's not "negative damage", so clamp to 0.
   for (const p of pvpSeries) {
     if (!p?.date) continue;
     const r = row(p.date);
-    r.pvpDamage = big(p.pvpDamage); r.pvpRate = p.rate ?? 0; r.diffDamage = big(p.diffDamage);
+    const dd = big(p.diffDamage);
+    r.pvpDamage = big(p.pvpDamage); r.pvpRate = p.rate ?? 0; r.diffDamage = dd < 0n ? 0n : dd;
     if (r.maxPower === 0n && p.maxPower) r.maxPower = big(p.maxPower);
   }
   // today's live values so the series ends at "now"

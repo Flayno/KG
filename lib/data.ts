@@ -3,6 +3,7 @@
 
 import { prisma } from "./prisma";
 import { normalizeName } from "./normalize";
+import { seasonActiveDateRange } from "./bl";
 import {
   characterDTO,
   allianceDTO,
@@ -136,6 +137,8 @@ export async function getCharacterHistory(id: number) {
       maxPower: s.maxPower.toString(),
       level: s.level,
       pvpDamage: s.pvpDamage.toString(),
+      pvpRate: s.pvpRate,
+      diffDamage: s.diffDamage.toString(),
     })),
   };
 }
@@ -163,13 +166,14 @@ export async function getAllianceMembers(id: string) {
  * PvP damage each character dealt in the last `days` days (sum of per-date
  * diffDamage from snapshots) — a real "recent PvP activity" signal.
  */
-export async function getRecentPvpDamage(ids: number[], days = 7): Promise<Map<number, bigint>> {
+/** PvP damage each character dealt during a BL season's active window. */
+export async function getSeasonPvpDamage(ids: number[], season: number): Promise<Map<number, bigint>> {
   const result = new Map<number, bigint>();
   if (ids.length === 0) return result;
-  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const { gte, lt } = seasonActiveDateRange(season);
   const rows = await prisma.characterSnapshot.groupBy({
     by: ["characterId"],
-    where: { characterId: { in: ids }, date: { gte: cutoff } },
+    where: { characterId: { in: ids }, date: { gte, lt } },
     _sum: { diffDamage: true },
   });
   for (const r of rows) result.set(r.characterId, r._sum.diffDamage ?? 0n);

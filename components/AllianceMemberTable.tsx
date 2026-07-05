@@ -15,11 +15,13 @@ function pvpIndexColor(rate: number): string {
 export function AllianceMemberTable({
   characters,
   tagsById,
-  recentPvpById,
+  pvpById,
+  pvpLabel = "PvP · 7 дн",
 }: {
   characters: CharacterView[];
   tagsById?: Map<number, HostileTag[]>;
-  recentPvpById?: Map<number, bigint>;
+  pvpById?: Map<number, bigint>;
+  pvpLabel?: string;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -29,7 +31,7 @@ export function AllianceMemberTable({
             <th className="pl-3 pr-6 text-center w-px whitespace-nowrap">Ранг</th>
             <th className="pr-3 text-left">Игрок</th>
             <th className="px-3 text-right whitespace-nowrap">PvP индекс</th>
-            <th className="px-3 text-right whitespace-nowrap">PvP · 7 дн</th>
+            <th className="px-3 text-right whitespace-nowrap">{pvpLabel}</th>
             <th className="px-3 text-right whitespace-nowrap hidden lg:table-cell">PvP всего</th>
             <th className="px-3 text-right whitespace-nowrap hidden sm:table-cell">Замок</th>
             <th className="pl-3 pr-4 text-right whitespace-nowrap hidden md:table-cell">В сети</th>
@@ -53,7 +55,7 @@ export function AllianceMemberTable({
               <td className={`px-3 text-right tabular-nums font-medium ${pvpIndexColor(c.pvpRate)}`}>{c.pvpRate.toFixed(2)}</td>
               <td className="px-3 text-right tabular-nums font-semibold whitespace-nowrap">
                 {(() => {
-                  const d = recentPvpById?.get(c.id) ?? 0n;
+                  const d = pvpById?.get(c.id) ?? 0n;
                   return d > 0n
                     ? <span className="text-success">+{formatPower(d)}</span>
                     : <span className="text-subtle font-normal">пассив</span>;

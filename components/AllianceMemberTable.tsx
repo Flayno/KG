@@ -30,6 +30,7 @@ export function AllianceMemberTable({
           <tr className="text-subtle text-[11px] uppercase tracking-wider [&>th]:font-medium [&>th]:py-2.5 [&>th]:border-b [&>th]:border-border">
             <th className="pl-3 pr-6 text-center w-px whitespace-nowrap">Ранг</th>
             <th className="pr-3 text-left">Игрок</th>
+            <th className="px-3 text-right whitespace-nowrap">Мощь</th>
             <th className="px-3 text-right whitespace-nowrap">PvP индекс</th>
             <th className="px-3 text-right whitespace-nowrap">{pvpLabel}</th>
             <th className="px-3 text-right whitespace-nowrap hidden lg:table-cell">PvP всего</th>
@@ -51,6 +52,9 @@ export function AllianceMemberTable({
                   {c.blacklisted && <BlacklistMark reason={c.blacklistReason} />}
                   <HostileTags tags={tagsById?.get(c.id)} />
                 </Link>
+              </td>
+              <td className="px-3 text-right tabular-nums font-semibold text-primary whitespace-nowrap" title={formatNumber(c.power)}>
+                {formatPower(c.power)}
               </td>
               <td className={`px-3 text-right tabular-nums font-medium ${pvpIndexColor(c.pvpRate)}`}>{c.pvpRate.toFixed(2)}</td>
               <td className="px-3 text-right tabular-nums font-semibold whitespace-nowrap">

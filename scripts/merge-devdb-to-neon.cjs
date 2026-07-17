@@ -13,6 +13,14 @@ const path = require("path");
 
 const LOCAL_DB = path.join(__dirname, "..", "prisma", "dev.db");
 const POSTGRES_URL = process.env.NEON_URL || process.env.DATABASE_URL;
+const BATCH_SIZE = Number(process.env.MERGE_BATCH_SIZE || 200);
+const TABLE_FILTER = new Set(
+  (process.env.MERGE_TABLES || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+);
+const INSERT_MISSING = process.env.MERGE_INSERT_MISSING === "1";
 
 if (!POSTGRES_URL || !POSTGRES_URL.startsWith("postgres")) {
   console.error("Set NEON_URL to the production Neon/Postgres connection string.");
@@ -25,13 +33,38 @@ if (!fs.existsSync(LOCAL_DB)) {
 }
 
 const sqlite = new DatabaseSync(LOCAL_DB);
-const pg = new Client({
-  connectionString: POSTGRES_URL,
-  ssl: { rejectUnauthorized: false },
-  keepAlive: true,
-  connectionTimeoutMillis: 15000,
-  query_timeout: 60000,
-});
+let pg = null;
+
+async function getClient() {
+  if (pg) return pg;
+  pg = new Client({
+    connectionString: POSTGRES_URL,
+    ssl: { rejectUnauthorized: false },
+    keepAlive: true,
+    connectionTimeoutMillis: 15000,
+    query_timeout: 60000,
+  });
+  pg.on("error", () => {
+    pg = null;
+  });
+  await pg.connect();
+  return pg;
+}
+
+async function query(sql, params) {
+  for (let attempt = 0; ; attempt++) {
+    let client = null;
+    try {
+      client = await getClient();
+      return await client.query(sql, params);
+    } catch (e) {
+      if (attempt >= 5) throw e;
+      try { await client?.end(); } catch {}
+      pg = null;
+      await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+    }
+  }
+}
 
 const bool = (v) => v === 1 || v === true || v === "1";
 const date = (v) => (v == null ? null : new Date(Number(v)));
@@ -58,7 +91,7 @@ function placeholders(rowCount, colCount) {
 
 async function batch(items, cols, fn) {
   const perRow = cols.length;
-  const size = Math.min(500, Math.max(1, Math.floor(60000 / perRow)));
+  const size = Math.min(BATCH_SIZE, Math.max(1, Math.floor(60000 / perRow)));
   let done = 0;
   for (let i = 0; i < items.length; i += size) {
     await fn(items.slice(i, i + size));
@@ -69,6 +102,10 @@ async function batch(items, cols, fn) {
 }
 
 async function upsertTable(table, cols, conflictCols, selectSql) {
+  if (TABLE_FILTER.size && !TABLE_FILTER.has(table)) {
+    console.log(`${table}: skipped`);
+    return;
+  }
   const source = rows(selectSql).map((r) => project(r, cols));
   if (!source.length) {
     console.log(`${table}: 0`);
@@ -77,23 +114,53 @@ async function upsertTable(table, cols, conflictCols, selectSql) {
 
   const names = cols.map((c) => c.name);
   const quoted = names.map((n) => `"${n}"`).join(",");
-  const updateCols = names.filter((n) => !conflictCols.includes(n));
-  const updates = updateCols.map((n) => `"${n}" = EXCLUDED."${n}"`).join(",");
   const conflict = conflictCols.map((n) => `"${n}"`).join(",");
 
-  console.log(`${table}: ${source.length}`);
+  if (INSERT_MISSING && conflictCols.length === 1) {
+    const key = conflictCols[0];
+    console.log(`${table}: ${source.length} (insert missing by ${key})`);
+    await batch(source, cols, async (slice) => {
+      const pgType = Number.isInteger(slice[0]?.[key]) ? "int" : "text";
+      const values = slice.map((_, i) => `($${i + 1}::${pgType})`).join(",");
+      const missingRows = await query(
+        `WITH v("${key}") AS (VALUES ${values})
+         SELECT v."${key}" FROM v
+         LEFT JOIN "${table}" t ON t."${key}" = v."${key}"
+         WHERE t."${key}" IS NULL`,
+        slice.map((r) => r[key])
+      );
+      const missingKeys = new Set(missingRows.rows.map((r) => r[key]));
+      const missing = slice.filter((r) => missingKeys.has(r[key]));
+      if (!missing.length) return;
+      const params = missing.flatMap((r) => names.map((n) => r[n]));
+      await query(
+        `INSERT INTO "${table}" (${quoted}) VALUES ${placeholders(missing.length, names.length)} ON CONFLICT (${conflict}) DO NOTHING`,
+        params
+      );
+    });
+    return;
+  }
+
+  const updateCols = names.filter((n) => !conflictCols.includes(n));
+  const updates = updateCols.map((n) => `"${n}" = EXCLUDED."${n}"`).join(",");
+
+  console.log(`${table}: ${source.length}${INSERT_MISSING ? " (insert missing)" : ""}`);
   await batch(source, cols, async (slice) => {
     const params = slice.flatMap((r) => names.map((n) => r[n]));
     const sql = `
       INSERT INTO "${table}" (${quoted})
       VALUES ${placeholders(slice.length, names.length)}
-      ON CONFLICT (${conflict}) DO UPDATE SET ${updates}
+      ON CONFLICT (${conflict}) DO ${INSERT_MISSING ? "NOTHING" : `UPDATE SET ${updates}`}
     `;
-    await pg.query(sql, params);
+    await query(sql, params);
   });
 }
 
 async function replaceNaturalKeyRows(table, cols, keyCols, selectSql) {
+  if (TABLE_FILTER.size && !TABLE_FILTER.has(table)) {
+    console.log(`${table}: skipped`);
+    return;
+  }
   const source = rows(selectSql).map((r) => project(r, cols));
   if (!source.length) {
     console.log(`${table}: 0`);
@@ -110,27 +177,26 @@ async function replaceNaturalKeyRows(table, cols, keyCols, selectSql) {
     const keyAliases = keyCols.map((n) => `"${n}"`).join(",");
     const deleteMatch = keyCols.map((n) => `t."${n}" = v."${n}"`).join(" AND ");
 
-    await pg.query("BEGIN");
+    const client = await getClient();
+    await client.query("BEGIN");
     try {
-      await pg.query(
+      await client.query(
         `DELETE FROM "${table}" t USING (VALUES ${keyValues}) AS v(${keyAliases}) WHERE ${deleteMatch}`,
         keyParams
       );
-      await pg.query(
+      await client.query(
         `INSERT INTO "${table}" (${quoted}) VALUES ${placeholders(slice.length, names.length)}`,
         insertParams
       );
-      await pg.query("COMMIT");
+      await client.query("COMMIT");
     } catch (e) {
-      await pg.query("ROLLBACK");
+      try { await client.query("ROLLBACK"); } catch {}
       throw e;
     }
   });
 }
 
 async function merge() {
-  await pg.connect();
-
   await upsertTable("Cluster", [
     col("id"), col("name"), col("description"),
   ], ["id"], `SELECT id, name, description FROM Cluster`);
@@ -178,12 +244,12 @@ async function merge() {
   ], ["id"], `SELECT id, a, b FROM ManualLink`);
 
   await upsertTable("CharacterAllianceLink", [
-    col("id"), col("characterId"), col("allianceUuid"), col("label"), col("name"), col("date"),
-  ], ["characterId", "allianceUuid"], `SELECT id, characterId, allianceUuid, label, name, date FROM CharacterAllianceLink`);
+    col("characterId"), col("allianceUuid"), col("label"), col("name"), col("date"),
+  ], ["characterId", "allianceUuid"], `SELECT characterId, allianceUuid, label, name, date FROM CharacterAllianceLink`);
 
   await upsertTable("CharacterNameHistory", [
-    col("id"), col("characterId"), col("name"), col("searchName"), col("date"),
-  ], ["characterId", "name"], `SELECT id, characterId, name, searchName, date FROM CharacterNameHistory`);
+    col("characterId"), col("name"), col("searchName"), col("date"),
+  ], ["characterId", "name"], `SELECT characterId, name, searchName, date FROM CharacterNameHistory`);
 
   await replaceNaturalKeyRows("CharacterSnapshot", [
     col("characterId"), col("date"), bigint("power"), bigint("maxPower"), col("level"),
@@ -196,7 +262,7 @@ async function merge() {
     col("allianceId"), col("date"), bigint("power"), col("members"),
   ], ["allianceId", "date"], `SELECT allianceId, date, CAST(power AS TEXT) power, members FROM AllianceSnapshot`);
 
-  const counts = await pg.query(`
+  const counts = await query(`
     SELECT
       (SELECT count(*)::int FROM "Cluster") clusters,
       (SELECT count(*)::int FROM "Server") servers,
@@ -212,6 +278,6 @@ merge()
     process.exitCode = 1;
   })
   .finally(async () => {
-    try { await pg.end(); } catch {}
+    try { await pg?.end(); } catch {}
     try { sqlite.close(); } catch {}
   });

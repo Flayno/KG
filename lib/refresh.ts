@@ -12,7 +12,66 @@ const TTL_MS = 10 * 60 * 1000; // refresh at most once per 10 minutes
 const big = (v: unknown) => BigInt(String(v ?? "0").split(".")[0] || "0");
 const today = () => new Date().toISOString().slice(0, 10);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-type AnyObj = Record<string, any>;
+type AnyObj = {
+  [key: string]: unknown;
+  id?: number;
+  uuid?: string;
+  code?: string;
+  name?: string;
+  nickname?: string;
+  content?: string;
+  description?: string;
+  label?: string;
+  segment?: AnyObj;
+  cluster?: AnyObj;
+  server?: AnyObj;
+  flag?: AnyObj;
+  alliance?: AnyObj;
+  allianceHistory?: AnyObj;
+  character?: AnyObj;
+  history?: AnyObj[];
+  power?: unknown;
+  maxPower?: unknown;
+  pvpDamage?: unknown;
+  diffDamage?: unknown;
+  pvpRate?: number;
+  rate?: number;
+  pvp?: AnyObj[];
+  online?: boolean;
+  closed?: boolean;
+  cold?: boolean;
+  active?: boolean;
+  deleted?: boolean;
+  season?: number;
+  clusterId?: number;
+  serverId?: number;
+  level?: number;
+  gender?: number;
+  allianceRank?: number;
+  techLevel?: number;
+  kvkWins?: number;
+  maxMembers?: number;
+  membersCount?: number;
+  members?: number | AnyObj[];
+  openDate?: string;
+  offlineDate?: string;
+  lastOnline?: string;
+  avatar?: string;
+  allianceRankName?: string;
+  logoImage?: string;
+  date?: string;
+};
+type SnapshotRow = {
+  characterId: number;
+  date: string;
+  power: bigint;
+  maxPower: bigint;
+  level: number;
+  pvpDamage: bigint;
+  pvpRate: number;
+  diffDamage: bigint;
+  allianceId: string | null;
+};
 
 async function getJSON(path: string): Promise<AnyObj | null> {
   return rateLimited(async () => {
@@ -38,12 +97,13 @@ async function getJSON(path: string): Promise<AnyObj | null> {
 
 async function ensureFlag(flag: AnyObj | null | undefined) {
   if (!flag?.id) return null;
+  const id = Number(flag.id);
   await prisma.flag.upsert({
-    where: { id: flag.id },
-    create: { id: flag.id, code: flag.code ?? "", name: flag.name ?? "", content: flag.content ?? "" },
+    where: { id },
+    create: { id, code: flag.code ?? "", name: flag.name ?? "", content: flag.content ?? "" },
     update: { code: flag.code ?? "", name: flag.name ?? "", content: flag.content ?? "" },
   });
-  return flag.id as number;
+  return id;
 }
 
 async function ensureServer(server: AnyObj | null | undefined) {
@@ -95,33 +155,36 @@ async function ensureServerId(serverId: number | null | undefined) {
 
 async function ensureAllianceRef(ref: AnyObj | null | undefined, serverId: number) {
   if (!ref?.id) return null;
+  const id = String(ref.id);
   await prisma.alliance.upsert({
-    where: { id: ref.id },
+    where: { id },
     create: {
-      id: ref.id, name: ref.name ?? "", label: ref.label ?? "", serverId,
+      id, name: ref.name ?? "", label: ref.label ?? "", serverId,
       power: 0n, members: 0, maxMembers: 100, deleted: !!ref.deleted,
     },
     update: {}, // don't clobber a fully-imported alliance with a thin ref
   });
-  return ref.id as string;
+  return id;
 }
 
 async function snapshotCharacter(c: AnyObj) {
   const date = today();
+  const characterId = Number(c.id);
   const existing = await prisma.characterSnapshot.findFirst({
-    where: { characterId: c.id, date },
+    where: { characterId, date },
     select: { id: true },
   });
   const data = {
     power: big(c.power), maxPower: big(c.maxPower), level: c.level ?? 0,
-    pvpDamage: big(c.pvpDamage), allianceId: c.alliance?.id ?? null,
+    pvpDamage: big(c.pvpDamage), allianceId: c.alliance?.id ? String(c.alliance.id) : null,
   };
   if (existing) await prisma.characterSnapshot.update({ where: { id: existing.id }, data });
-  else await prisma.characterSnapshot.create({ data: { characterId: c.id, date, ...data } });
+  else await prisma.characterSnapshot.create({ data: { characterId, date, ...data } });
 }
 
 async function upsertCharacter(c: AnyObj, serverId: number, allianceId: string | null) {
   const flagId = await ensureFlag(c.flag);
+  const id = Number(c.id);
   const data = {
     nickname: c.nickname ?? "?", searchName: normalizeName(c.nickname ?? ""), serverId, allianceId,
     power: big(c.power), maxPower: big(c.maxPower), level: c.level ?? 0, active: c.active ?? true,
@@ -133,7 +196,7 @@ async function upsertCharacter(c: AnyObj, serverId: number, allianceId: string |
       : {}),
     refreshedAt: new Date(),
   };
-  await prisma.character.upsert({ where: { id: c.id }, create: { id: c.id, ...data }, update: data });
+  await prisma.character.upsert({ where: { id }, create: { id, ...data }, update: data });
   await snapshotCharacter(c);
 }
 
@@ -148,11 +211,11 @@ function isFresh(refreshedAt: Date | null | undefined) {
  */
 async function syncCharacterActivity(id: number, current: AnyObj) {
   const j = await getJSON(`/character/${id}/activity`);
-  const powerSeries: AnyObj[] = j?.power ?? [];
-  const pvpSeries: AnyObj[] = j?.pvp ?? []; // per-date PvP: rate, pvpDamage, diffDamage
+  const powerSeries = Array.isArray(j?.power) ? j.power as AnyObj[] : [];
+  const pvpSeries = Array.isArray(j?.pvp) ? j.pvp : []; // per-date PvP: rate, pvpDamage, diffDamage
 
-  const allianceId = current.alliance?.id ?? null;
-  const byDate = new Map<string, AnyObj>();
+  const allianceId = current.alliance?.id ? String(current.alliance.id) : null;
+  const byDate = new Map<string, SnapshotRow>();
   const row = (date: string) => {
     let r = byDate.get(date);
     if (!r) {
@@ -263,6 +326,7 @@ export async function refreshCharacter(id: number, force = false): Promise<boole
   if (!c?.id) return false;
 
   const serverId = (await ensureServer(c.server)) ?? c.serverId;
+  if (!serverId) return false;
   await ensureServerId(serverId); // fallback if the payload lacked full server info
   const allianceId = await ensureAllianceRef(c.alliance, serverId);
   await upsertCharacter(c, serverId, allianceId);
@@ -278,7 +342,7 @@ async function syncLinked(id: number) {
   const arr = await getJSON(`/character/${id}/linked`);
   const linked = Array.isArray(arr) ? (arr as AnyObj[]) : [];
   for (const m of linked) {
-    if (!m?.id || m.id === id) continue;
+    if (!m?.id || m.id === id || !m.serverId) continue;
     try {
       const aId = await ensureAllianceRef(m.alliance, m.serverId);
       await upsertCharacter(m, m.serverId, aId);
@@ -344,8 +408,9 @@ export async function refreshAlliance(id: string, force = false): Promise<{ refr
   if (!a?.id) return { refreshed: false, members: 0 };
 
   const serverId = a.serverId;
+  if (!serverId) return { refreshed: false, members: 0 };
   await ensureServerId(serverId); // create the server if it wasn't imported (fresh DB)
-  const members: AnyObj[] = a.members ?? [];
+  const members = Array.isArray(a.members) ? a.members : [];
   const memberCount = typeof a.members === "number" ? a.members : (a.membersCount ?? members.length);
 
   await prisma.alliance.upsert({

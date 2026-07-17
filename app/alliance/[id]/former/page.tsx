@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, Flag, AllianceTag, BlacklistMark, HostileTags } from "@/components/Bits";
 import { Avatar } from "@/components/Avatar";
 import { getFormerMembers, getHostileTagsFor } from "@/lib/data";
-import { formatPower, formatNumber } from "@/lib/format";
+import { formatPower } from "@/lib/format";
 
 export default async function AllianceFormer({
   params,

@@ -15,12 +15,11 @@ export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) 
   const router = useRouter();
   const abort = useRef<AbortController | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  const hasQuery = q.trim().length > 0;
+  const visibleResults = hasQuery ? results : [];
 
   useEffect(() => {
-    if (!q.trim()) {
-      setResults([]);
-      return;
-    }
+    if (!q.trim()) return;
     abort.current?.abort();
     const ac = new AbortController();
     abort.current = ac;
@@ -64,10 +63,10 @@ export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) 
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onFocus={() => results.length && setOpen(true)}
+        onFocus={() => visibleResults.length && setOpen(true)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            if (results[0]) go(results[0].id);
+            if (visibleResults[0]) go(visibleResults[0].id);
             else router.push(`/character/search?q=${encodeURIComponent(q)}`);
           }
         }}
@@ -78,9 +77,9 @@ export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) 
             : "w-full bg-surface-2 border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:border-primary"
         }
       />
-      {open && results.length > 0 && (
+      {open && visibleResults.length > 0 && (
         <div className="absolute top-full mt-1 left-0 right-0 bg-surface border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto z-30">
-          {results.map((c) => (
+          {visibleResults.map((c) => (
             <button
               key={c.id}
               onClick={() => go(c.id)}

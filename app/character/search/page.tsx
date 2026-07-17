@@ -22,17 +22,16 @@ function SearchInner() {
   const [results, setResults] = useState<CharacterView[]>([]);
   const [loading, setLoading] = useState(false);
   const abort = useRef<AbortController | null>(null);
+  const hasQuery = q.trim().length > 0;
+  const visibleResults = hasQuery ? results : [];
 
   useEffect(() => {
-    if (!q.trim()) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
+    if (!q.trim()) return;
     abort.current?.abort();
     const ac = new AbortController();
     abort.current = ac;
     const t = setTimeout(() => {
+      setLoading(true);
       fetch(`/api/character/search/select?search=${encodeURIComponent(q)}`, {
         signal: ac.signal,
       })
@@ -64,12 +63,12 @@ function SearchInner() {
       </div>
 
       <div className="mt-4">
-        {loading && <div className="text-muted text-sm">Поиск…</div>}
-        {!loading && q && results.length === 0 && (
+        {hasQuery && loading && <div className="text-muted text-sm">Поиск…</div>}
+        {hasQuery && !loading && visibleResults.length === 0 && (
           <div className="text-muted text-sm">Ничего не найдено</div>
         )}
         <div className="flex flex-col gap-2">
-          {results.map((c) => (
+          {visibleResults.map((c) => (
             <Link key={c.id} href={`/character/${c.id}`} className="no-underline">
               <Card className="px-4 py-2.5 hover:border-primary flex items-center gap-3">
                 <Avatar src={c.avatar} name={c.nickname} size={32} rounded="rounded-md" />

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
+import type { TooltipComponentFormatterCallbackParams } from "echarts";
 import { formatPower, formatNumber } from "@/lib/format";
 import { blSeason, seasonNumberAt } from "@/lib/bl";
 
@@ -17,6 +18,13 @@ export type TimelinePoint = {
 
 type Tab = "power" | "pvp";
 type View = "chart" | "table";
+type TooltipDisplayParam = {
+  axisValueLabel?: string;
+  axisValue?: string | number;
+  seriesName?: string;
+  value?: unknown;
+  color?: string;
+};
 
 const RU_WD = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 const RU_MON = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
@@ -108,16 +116,16 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
         backgroundColor: "#1c1c2a",
         borderColor: "rgba(255,255,255,0.1)",
         textStyle: { color: "#eceef6" },
-        formatter: (params: any) => {
-          const arr = (Array.isArray(params) ? params : [params]) as { axisValueLabel?: string; axisValue: number; seriesName: string; value: [number, number] | number; color: string }[];
-          const head = arr[0]?.axisValueLabel ?? new Date(arr[0]?.axisValue).toISOString().slice(0, 10);
+        formatter: (params: TooltipComponentFormatterCallbackParams) => {
+          const arr = (Array.isArray(params) ? params : [params]) as TooltipDisplayParam[];
+          const head = arr[0]?.axisValueLabel ?? new Date(arr[0]?.axisValue ?? 0).toISOString().slice(0, 10);
           const lines = arr.map((p) => {
-            const n = p.seriesName;
+            const n = p.seriesName ?? "";
             const raw = Array.isArray(p.value) ? p.value[1] : p.value;
             const val = n.includes("индекс") ? Number(raw).toFixed(2)
-              : n.includes("замка") ? formatNumber(raw)
-              : formatPower(raw);
-            return `<div style="display:flex;gap:8px;align-items:center"><span style="width:8px;height:8px;border-radius:9px;background:${p.color}"></span>${n}<span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600">${val}</span></div>`;
+              : n.includes("замка") ? formatNumber(String(raw ?? 0))
+              : formatPower(String(raw ?? 0));
+            return `<div style="display:flex;gap:8px;align-items:center"><span style="width:8px;height:8px;border-radius:9px;background:${p.color ?? COLORS.text}"></span>${n}<span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600">${val}</span></div>`;
           }).join("");
           return `<div style="font-size:12px;margin-bottom:4px;color:#a2a4ba">${head}</div>${lines}`;
         },
@@ -188,7 +196,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
         { name: "PvP-индекс", type: "line", yAxisIndex: 1, showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.rate }, itemStyle: { color: COLORS.rate }, data: points.map((p) => [p.date, p.pvpRate]) },
       ],
     };
-  }, [tab, dates, points, markArea, markLine, axisFmt]);
+  }, [tab, points, markArea, markLine, axisFmt]);
 
   useEffect(() => {
     if (view !== "chart" || !elRef.current) return;

@@ -14,7 +14,7 @@ export default async function CharacterActivity({
 
   return (
     <div className="flex flex-col gap-5">
-      <Card className="p-4">
+      <Card className="p-2 sm:p-4">
         {history.length < 2 ? (
           <div className="text-muted text-sm py-8 text-center">{t.character.notEnoughChartData}</div>
         ) : (

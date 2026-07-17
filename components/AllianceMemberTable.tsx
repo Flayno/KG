@@ -31,16 +31,16 @@ export function AllianceMemberTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full table-fixed text-sm border-separate border-spacing-0">
+      <table className="w-full sm:table-fixed text-sm border-separate border-spacing-0">
         <colgroup>
           <col className="w-14" />
           <col />
           <col className="w-24" />
           <col className="w-24" />
           <col className="w-24" />
-          <col className="w-24" />
-          <col className="w-20" />
-          <col className="w-24" />
+          <col className="hidden lg:table-column w-24" />
+          <col className="hidden sm:table-column w-20" />
+          <col className="hidden md:table-column w-24" />
         </colgroup>
         <thead>
           <tr className="text-subtle text-[11px] uppercase tracking-wider [&>th]:font-medium [&>th]:py-2.5 [&>th]:border-b [&>th]:border-border">

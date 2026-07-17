@@ -47,7 +47,7 @@ export default async function AllianceActivity({
   return (
     <div className="flex flex-col gap-5">
       {chartPoints.length >= 2 && (
-        <Card className="p-4">
+        <Card className="p-2 sm:p-4">
           <h2 className="text-lg font-semibold mb-2">{t.alliance.pvpChart}</h2>
           <PowerChart points={chartPoints} color="#f783ac" locale={locale} />
         </Card>

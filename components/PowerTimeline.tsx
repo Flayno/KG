@@ -52,6 +52,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
   const t = useDictionary();
   const [tab, setTab] = useState<Tab>("power");
   const [view, setView] = useState<View>("chart");
+  const [compact, setCompact] = useState(false);
   const elRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
   const dayLevelRef = useRef(false);
@@ -113,11 +114,20 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
   }, [dates]);
 
   const option = useMemo(() => {
+    const grid = compact
+      ? { top: 18, left: 2, right: 2, bottom: 82, containLabel: true }
+      : { top: 28, left: 8, right: 8, bottom: 74, containLabel: true };
     const base = {
       backgroundColor: "transparent",
       textStyle: { color: COLORS.text, fontFamily: "inherit" },
-      grid: { top: 28, left: 8, right: 8, bottom: 74, containLabel: true },
-      legend: { bottom: 6, textStyle: { color: COLORS.text }, itemWidth: 18, itemHeight: 10 },
+      grid,
+      legend: {
+        bottom: compact ? 0 : 6,
+        type: "scroll",
+        textStyle: { color: COLORS.text, fontSize: compact ? 10 : 12 },
+        itemWidth: compact ? 14 : 18,
+        itemHeight: compact ? 8 : 10,
+      },
       tooltip: {
         trigger: "axis",
         backgroundColor: "#1c1c2a",
@@ -140,14 +150,14 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
       xAxis: {
         type: "time",
         axisLine: { lineStyle: { color: COLORS.axis } },
-        axisLabel: { color: COLORS.subtle, formatter: axisFmt, hideOverlap: true },
+        axisLabel: { color: COLORS.subtle, fontSize: compact ? 10 : 12, formatter: axisFmt, hideOverlap: true },
       },
       dataZoom: [
         { type: "inside", start: 60, end: 100 },
         {
           type: "slider",
-          height: 34,
-          bottom: 30,
+          height: compact ? 26 : 34,
+          bottom: compact ? 28 : 30,
           borderColor: "transparent",
           backgroundColor: "rgba(255,255,255,0.03)",
           fillerColor: "rgba(124,92,255,0.18)",
@@ -155,7 +165,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
           moveHandleStyle: { color: "#7c5cff" },
           dataBackground: { lineStyle: { color: COLORS.subtle }, areaStyle: { color: "rgba(163,148,255,0.12)" } },
           selectedDataBackground: { lineStyle: { color: COLORS.rate }, areaStyle: { color: "rgba(163,148,255,0.25)" } },
-          textStyle: { color: COLORS.subtle },
+          textStyle: { color: COLORS.subtle, fontSize: compact ? 10 : 12 },
         },
       ],
     };
@@ -165,13 +175,13 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
         ...base,
         yAxis: [
           {
-            type: "value", name: t.common.battlePower, scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
-            axisLabel: { color: COLORS.subtle, formatter: (v: number) => formatPower(v) },
+            type: "value", name: compact ? "" : t.common.battlePower, scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
+            axisLabel: { color: COLORS.subtle, fontSize: compact ? 10 : 12, formatter: (v: number) => formatPower(v) },
             splitLine: { lineStyle: { color: COLORS.grid } },
           },
           {
-            type: "value", name: t.common.castleLevel, scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
-            axisLabel: { color: COLORS.subtle, formatter: (v: number) => formatNumber(Math.round(v)) },
+            type: "value", name: compact ? "" : t.common.castleLevel, scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
+            axisLabel: { color: COLORS.subtle, fontSize: compact ? 10 : 12, formatter: (v: number) => formatNumber(Math.round(v)) },
             splitLine: { show: false },
           },
         ],
@@ -188,13 +198,13 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
       ...base,
       yAxis: [
         {
-          type: "value", name: t.common.pvpDailyDamage, scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
-          axisLabel: { color: COLORS.subtle, formatter: (v: number) => formatPower(v) },
+          type: "value", name: compact ? "" : t.common.pvpDailyDamage, scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
+          axisLabel: { color: COLORS.subtle, fontSize: compact ? 10 : 12, formatter: (v: number) => formatPower(v) },
           splitLine: { lineStyle: { color: COLORS.grid } },
         },
         {
-          type: "value", name: t.common.pvpIndex, scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
-          axisLabel: { color: COLORS.subtle },
+          type: "value", name: compact ? "" : t.common.pvpIndex, scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
+          axisLabel: { color: COLORS.subtle, fontSize: compact ? 10 : 12 },
           splitLine: { show: false },
         },
       ],
@@ -203,7 +213,7 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
         { name: t.common.pvpIndex, type: "line", yAxisIndex: 1, showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.rate }, itemStyle: { color: COLORS.rate }, data: points.map((p) => [p.date, p.pvpRate]) },
       ],
     };
-  }, [tab, points, markArea, markLine, axisFmt, t]);
+  }, [tab, points, markArea, markLine, axisFmt, t, compact]);
 
   useEffect(() => {
     if (view !== "chart" || !elRef.current) return;
@@ -233,7 +243,11 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
     chart.on("datazoom", onZoom);
     onZoom();
 
-    const ro = new ResizeObserver(() => chart.resize());
+    const ro = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? window.innerWidth;
+      setCompact(window.innerWidth < 640 || width < 520);
+      chart.resize();
+    });
     ro.observe(elRef.current);
     return () => { chart.off("datazoom", onZoom); ro.disconnect(); };
   }, [option, view, dates, axisFmt]);
@@ -241,9 +255,9 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
   useEffect(() => () => { chartRef.current?.dispose(); chartRef.current = null; }, []);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3 gap-2">
-        <div className="inline-flex rounded-lg bg-surface-2 p-0.5">
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
+        <div className="inline-flex max-w-full overflow-x-auto rounded-lg bg-surface-2 p-0.5">
           <TabBtn active={tab === "power"} onClick={() => setTab("power")}>{t.common.powerHistory}</TabBtn>
           <TabBtn active={tab === "pvp"} onClick={() => setTab("pvp")}>{t.common.pvpActivity}</TabBtn>
         </div>
@@ -258,7 +272,13 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
       </div>
 
       {view === "chart" ? (
-        <div ref={elRef} className="w-full" style={{ height: 380 }} />
+        <div className="-mx-1 overflow-x-auto pb-1 sm:mx-0">
+          <div
+            ref={elRef}
+            className="min-w-[640px] sm:min-w-0 w-full"
+            style={{ height: compact ? 420 : 380 }}
+          />
+        </div>
       ) : (
         <TimelineTable points={points} tab={tab} />
       )}

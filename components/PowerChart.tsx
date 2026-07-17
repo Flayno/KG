@@ -19,7 +19,7 @@ export function PowerChart({
   }
   const W = 600;
   const H = height;
-  const pad = { top: 10, right: 10, bottom: 22, left: 48 };
+  const pad = { top: 10, right: 8, bottom: 22, left: 42 };
   const innerW = W - pad.left - pad.right;
   const innerH = H - pad.top - pad.bottom;
 

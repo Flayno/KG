@@ -41,7 +41,7 @@ export default async function AllianceOverview({
       {chartPoints.length >= 2 && (
         <Card className="p-4">
           <h2 className="text-lg font-semibold mb-2">{t.alliance.powerHistory}</h2>
-          <PowerChart points={chartPoints} color="var(--gold)" locale={locale} />
+          <PowerChart points={chartPoints} height={180} color="var(--gold)" locale={locale} />
         </Card>
       )}
 

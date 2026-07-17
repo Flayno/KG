@@ -90,7 +90,10 @@ async function createManySkipDuplicates<T>(delegate: CreateManyDelegate<T>, data
 export async function POST(req: Request) {
   const url = new URL(req.url);
   const adminKey = process.env.ADMIN_KEY;
-  if (adminKey && url.searchParams.get("key") !== adminKey) {
+  if (!adminKey) {
+    return NextResponse.json({ error: "import disabled" }, { status: 503 });
+  }
+  if (url.searchParams.get("key") !== adminKey) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

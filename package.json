@@ -19,7 +19,8 @@
     "pg:generate": "node scripts/postgres-schema.cjs && prisma generate --schema prisma/schema.postgres.prisma",
     "pg:push": "node scripts/postgres-schema.cjs && prisma db push --schema prisma/schema.postgres.prisma",
     "pg:import-all": "npm run pg:generate && tsx prisma/import-all.ts",
-    "pg:merge-devdb": "node scripts/merge-devdb-to-neon.cjs"
+    "pg:merge-devdb": "node scripts/merge-devdb-to-neon.cjs",
+    "vercel:upload-history": "node scripts/upload-history-to-vercel.cjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

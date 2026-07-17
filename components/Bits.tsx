@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { parseTags } from "@/lib/tags";
+import { getDictionary, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
 export function Card({
   children,
@@ -69,10 +70,13 @@ export function Flag({
 
 export function AllianceTag({
   alliance,
+  locale = DEFAULT_LOCALE,
 }: {
   alliance: { id: string; label: string } | null;
+  locale?: Locale;
 }) {
-  if (!alliance) return <span className="text-muted">—</span>;
+  const t = getDictionary(locale);
+  if (!alliance) return <span className="text-muted">{t.common.emptyDash}</span>;
   return (
     <Link
       href={`/alliance/${alliance.id}`}
@@ -164,15 +168,18 @@ export function Tag({
 /** Orange pills naming hostile alliances a player was ever in. */
 export function HostileTags({
   tags,
+  locale = DEFAULT_LOCALE,
 }: {
   tags?: { id: string; label: string; name: string }[];
+  locale?: Locale;
 }) {
+  const text = getDictionary(locale);
   if (!tags || tags.length === 0) return null;
   return (
     <>
-      {tags.map((t) => (
-        <Tag key={t.id} color="orange" title={`Был в недружественном альянсе [${t.label}] ${t.name}`}>
-          [{t.label}]
+      {tags.map((tag) => (
+        <Tag key={tag.id} color="orange" title={text.hostile.tagTitle(tag.label, tag.name)}>
+          [{tag.label}]
         </Tag>
       ))}
     </>
@@ -190,9 +197,10 @@ export function RankBadge({ name }: { name?: string | null }) {
 
 export function BlacklistMark({ reason }: { reason?: string | null }) {
   const tags = parseTags(reason);
+  const t = getDictionary(DEFAULT_LOCALE);
   return (
     <span
-      title={tags.length ? `Чёрный список: ${tags.join(", ")}` : "В чёрном списке"}
+      title={tags.length ? t.blacklist.titleWithTags(tags.join(", ")) : t.blacklist.titleDefault}
       className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-danger text-white text-[10px] font-bold shrink-0 ring-1 ring-red-300/30"
     >
       !

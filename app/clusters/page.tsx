@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Card, PageTitle } from "@/components/Bits";
 import { getClusters, getClusterServers } from "@/lib/data";
+import { getServerDictionary } from "@/lib/i18n-server";
 import type { ClusterView, ServerView } from "@/lib/types";
 
-export const metadata = { title: "Кластеры — KG Companion" };
+export const metadata = { title: "Clusters — KG Companion" };
 
 export default async function ClustersPage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function ClustersPage({
   searchParams: Promise<{ cluster?: string }>;
 }) {
   const { cluster } = await searchParams;
+  const t = await getServerDictionary();
   const clusterId = cluster ? Number(cluster) : undefined;
   const clusters = (await getClusters()) as ClusterView[];
   const servers = clusterId ? ((await getClusterServers(clusterId)) as ServerView[]) : [];
@@ -18,7 +20,7 @@ export default async function ClustersPage({
 
   return (
     <div>
-      <PageTitle title="Кластеры серверов" subtitle="Группы серверов Kingdom Guard" />
+      <PageTitle title={t.clusters.title} subtitle={t.clusters.subtitle} />
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {clusters.map((c) => (
@@ -61,10 +63,10 @@ export default async function ClustersPage({
                 className="no-underline bg-surface-2 rounded px-3 py-2 hover:bg-border text-foreground"
               >
                 <div className="font-semibold">#{s.id}</div>
-                <div className="text-muted text-xs">сезон {s.season}</div>
+                <div className="text-muted text-xs">{t.common.season} {s.season}</div>
               </Link>
             ))}
-            {servers.length === 0 && <div className="text-muted">Нет серверов</div>}
+            {servers.length === 0 && <div className="text-muted">{t.clusters.noServers}</div>}
           </div>
         </Card>
       )}

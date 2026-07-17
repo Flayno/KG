@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import type { ClusterView } from "@/lib/types";
+import { useDictionary } from "./LocaleProvider";
 
 export function RatingsControls({
   tab,
@@ -10,6 +13,7 @@ export function RatingsControls({
   clusters: ClusterView[];
   activeCluster?: number;
 }) {
+  const t = useDictionary();
   const clusterQS = (id?: number) => (id ? `?cluster=${id}` : "");
   return (
     <div className="flex flex-col gap-3 mb-4">
@@ -20,7 +24,7 @@ export function RatingsControls({
             tab === "characters" ? "bg-primary-strong text-white" : "text-muted hover:text-foreground"
           }`}
         >
-          Персонажи
+          {t.ratings.charactersTab}
         </Link>
         <Link
           href={`/ratings/alliances${clusterQS(activeCluster)}`}
@@ -28,7 +32,7 @@ export function RatingsControls({
             tab === "alliances" ? "bg-primary-strong text-white" : "text-muted hover:text-foreground"
           }`}
         >
-          Альянсы
+          {t.ratings.alliancesTab}
         </Link>
       </div>
 
@@ -41,7 +45,7 @@ export function RatingsControls({
               : "border-border text-muted hover:text-foreground"
           }`}
         >
-          Все
+          {t.common.all}
         </Link>
         {clusters.map((c) => (
           <Link

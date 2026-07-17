@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useDictionary } from "./LocaleProvider";
 
 export function BlacklistButton({
   id,
@@ -12,6 +13,7 @@ export function BlacklistButton({
   blacklisted: boolean;
   reason?: string | null;
 }) {
+  const t = useDictionary();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -38,7 +40,7 @@ export function BlacklistButton({
         disabled={pending}
         className="text-sm px-3 py-1.5 rounded border border-red-600 text-red-400 hover:bg-red-600/10 disabled:opacity-50"
       >
-        Убрать из чёрного списка
+        {t.blacklist.unmark}
       </button>
     );
   }
@@ -50,14 +52,14 @@ export function BlacklistButton({
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Причина (необязательно)"
+          placeholder={t.blacklist.reasonPlaceholder}
           className="bg-surface-2 border border-border rounded px-2 py-1.5 text-sm outline-none focus:border-primary"
         />
         <button onClick={add} disabled={pending} className="text-sm px-3 py-1.5 rounded bg-red-600 text-white hover:opacity-90 disabled:opacity-50">
-          Добавить
+          {t.common.add}
         </button>
         <button onClick={() => setEditing(false)} className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground">
-          Отмена
+          {t.common.cancel}
         </button>
       </div>
     );
@@ -68,7 +70,7 @@ export function BlacklistButton({
       onClick={() => setEditing(true)}
       className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground"
     >
-      В чёрный список
+      {t.blacklist.mark}
     </button>
   );
 }

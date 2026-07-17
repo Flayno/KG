@@ -5,6 +5,7 @@ import * as echarts from "echarts";
 import type { TooltipComponentFormatterCallbackParams } from "echarts";
 import { formatPower, formatNumber } from "@/lib/format";
 import { blSeason, seasonNumberAt } from "@/lib/bl";
+import { useDictionary, useLocale } from "./LocaleProvider";
 
 export type TimelinePoint = {
   date: string;
@@ -28,6 +29,8 @@ type TooltipDisplayParam = {
 
 const RU_WD = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 const RU_MON = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+const EN_WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const EN_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY_MS = 86_400_000;
 // Below this visible span (~1 season) switch axis to a labelled tick per day.
 const WEEKDAY_ZOOM_MS = 33 * DAY_MS;
@@ -45,6 +48,8 @@ const COLORS = {
 };
 
 export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
+  const locale = useLocale();
+  const t = useDictionary();
   const [tab, setTab] = useState<Tab>("power");
   const [view, setView] = useState<View>("chart");
   const elRef = useRef<HTMLDivElement>(null);
@@ -57,10 +62,12 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
   // Zoomed in → weekday over day; zoomed out → day over month.
   const axisFmt = useCallback((value: number) => {
     const d = new Date(value);
+    const weekdays = locale === "en" ? EN_WD : RU_WD;
+    const months = locale === "en" ? EN_MON : RU_MON;
     return dayLevelRef.current
-      ? `${RU_WD[d.getUTCDay()]}\n${d.getUTCDate()}`
-      : `${d.getUTCDate()}\n${RU_MON[d.getUTCMonth()]}`;
-  }, []);
+      ? `${weekdays[d.getUTCDay()]}\n${d.getUTCDate()}`
+      : `${d.getUTCDate()}\n${months[d.getUTCMonth()]}`;
+  }, [locale]);
 
   // Shade each BL active window overlapping the data, on the real time axis
   // (equal-width 3-week bands, rest weeks are real gaps).
@@ -122,8 +129,8 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
           const lines = arr.map((p) => {
             const n = p.seriesName ?? "";
             const raw = Array.isArray(p.value) ? p.value[1] : p.value;
-            const val = n.includes("индекс") ? Number(raw).toFixed(2)
-              : n.includes("замка") ? formatNumber(String(raw ?? 0))
+            const val = n.includes(t.common.pvpIndex) || n.toLowerCase().includes("index") ? Number(raw).toFixed(2)
+              : n.includes(t.common.castleLevel) || n.toLowerCase().includes("castle") ? formatNumber(String(raw ?? 0))
               : formatPower(String(raw ?? 0));
             return `<div style="display:flex;gap:8px;align-items:center"><span style="width:8px;height:8px;border-radius:9px;background:${p.color ?? COLORS.text}"></span>${n}<span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600">${val}</span></div>`;
           }).join("");
@@ -158,20 +165,20 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
         ...base,
         yAxis: [
           {
-            type: "value", name: "Боевая мощь", scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
+            type: "value", name: t.common.battlePower, scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
             axisLabel: { color: COLORS.subtle, formatter: (v: number) => formatPower(v) },
             splitLine: { lineStyle: { color: COLORS.grid } },
           },
           {
-            type: "value", name: "Уровень замка", scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
+            type: "value", name: t.common.castleLevel, scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
             axisLabel: { color: COLORS.subtle, formatter: (v: number) => formatNumber(Math.round(v)) },
             splitLine: { show: false },
           },
         ],
         series: [
-          { name: "Текущая мощь", type: "line", showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.current }, itemStyle: { color: COLORS.current }, markArea, markLine, data: points.map((p) => [p.date, Number(p.power)]) },
-          { name: "Историческая мощь", type: "line", showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.historical }, itemStyle: { color: COLORS.historical }, data: points.map((p) => [p.date, Number(p.maxPower)]) },
-          { name: "Уровень замка", type: "line", yAxisIndex: 1, showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.level }, itemStyle: { color: COLORS.level }, data: points.map((p) => [p.date, p.level]) },
+          { name: t.common.currentPower, type: "line", showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.current }, itemStyle: { color: COLORS.current }, markArea, markLine, data: points.map((p) => [p.date, Number(p.power)]) },
+          { name: t.common.historicalPower, type: "line", showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.historical }, itemStyle: { color: COLORS.historical }, data: points.map((p) => [p.date, Number(p.maxPower)]) },
+          { name: t.common.castleLevel, type: "line", yAxisIndex: 1, showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.level }, itemStyle: { color: COLORS.level }, data: points.map((p) => [p.date, p.level]) },
         ],
       };
     }
@@ -181,22 +188,22 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
       ...base,
       yAxis: [
         {
-          type: "value", name: "PvP-урон за день", scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
+          type: "value", name: t.common.pvpDailyDamage, scale: true, nameTextStyle: { color: COLORS.subtle, align: "left" },
           axisLabel: { color: COLORS.subtle, formatter: (v: number) => formatPower(v) },
           splitLine: { lineStyle: { color: COLORS.grid } },
         },
         {
-          type: "value", name: "PvP-индекс", scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
+          type: "value", name: t.common.pvpIndex, scale: true, nameTextStyle: { color: COLORS.subtle, align: "right" },
           axisLabel: { color: COLORS.subtle },
           splitLine: { show: false },
         },
       ],
       series: [
-        { name: "PvP-урон за день", type: "bar", itemStyle: { color: COLORS.damage, borderRadius: [2, 2, 0, 0] }, markArea, markLine, data: points.map((p) => [p.date, Number(p.diffDamage)]) },
-        { name: "PvP-индекс", type: "line", yAxisIndex: 1, showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.rate }, itemStyle: { color: COLORS.rate }, data: points.map((p) => [p.date, p.pvpRate]) },
+        { name: t.common.pvpDailyDamage, type: "bar", itemStyle: { color: COLORS.damage, borderRadius: [2, 2, 0, 0] }, markArea, markLine, data: points.map((p) => [p.date, Number(p.diffDamage)]) },
+        { name: t.common.pvpIndex, type: "line", yAxisIndex: 1, showSymbol: false, smooth: true, lineStyle: { width: 2, color: COLORS.rate }, itemStyle: { color: COLORS.rate }, data: points.map((p) => [p.date, p.pvpRate]) },
       ],
     };
-  }, [tab, points, markArea, markLine, axisFmt]);
+  }, [tab, points, markArea, markLine, axisFmt, t]);
 
   useEffect(() => {
     if (view !== "chart" || !elRef.current) return;
@@ -237,14 +244,14 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
     <div>
       <div className="flex items-center justify-between mb-3 gap-2">
         <div className="inline-flex rounded-lg bg-surface-2 p-0.5">
-          <TabBtn active={tab === "power"} onClick={() => setTab("power")}>История мощи</TabBtn>
-          <TabBtn active={tab === "pvp"} onClick={() => setTab("pvp")}>PvP активность</TabBtn>
+          <TabBtn active={tab === "power"} onClick={() => setTab("power")}>{t.common.powerHistory}</TabBtn>
+          <TabBtn active={tab === "pvp"} onClick={() => setTab("pvp")}>{t.common.pvpActivity}</TabBtn>
         </div>
         <div className="inline-flex rounded-lg bg-surface-2 p-0.5">
-          <IconBtn active={view === "chart"} onClick={() => setView("chart")} label="График">
+          <IconBtn active={view === "chart"} onClick={() => setView("chart")} label={t.common.chart}>
             <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />
           </IconBtn>
-          <IconBtn active={view === "table"} onClick={() => setView("table")} label="Таблица">
+          <IconBtn active={view === "table"} onClick={() => setView("table")} label={t.common.table}>
             <path d="M3 3h18v18H3z" /><path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
           </IconBtn>
         </div>
@@ -284,23 +291,24 @@ function IconBtn({ active, onClick, label, children }: { active: boolean; onClic
 }
 
 function TimelineTable({ points, tab }: { points: TimelinePoint[]; tab: Tab }) {
+  const t = useDictionary();
   const rows = [...points].reverse();
   return (
     <div className="overflow-x-auto max-h-[380px] overflow-y-auto">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-surface">
           <tr className="text-subtle text-[11px] uppercase tracking-wider text-left [&>th]:py-2 [&>th]:px-2 [&>th]:border-b [&>th]:border-border">
-            <th>Дата</th>
+            <th>{t.common.date}</th>
             {tab === "power" ? (
               <>
-                <th className="text-right">Текущая мощь</th>
-                <th className="text-right">Историческая</th>
-                <th className="text-right">Уровень</th>
+                <th className="text-right">{t.common.currentPower}</th>
+                <th className="text-right">{t.common.historical}</th>
+                <th className="text-right">{t.common.level}</th>
               </>
             ) : (
               <>
-                <th className="text-right">PvP-урон за день</th>
-                <th className="text-right">PvP-индекс</th>
+                <th className="text-right">{t.common.pvpDailyDamage}</th>
+                <th className="text-right">{t.common.pvpIndex}</th>
               </>
             )}
           </tr>
@@ -317,7 +325,7 @@ function TimelineTable({ points, tab }: { points: TimelinePoint[]; tab: Tab }) {
                 </>
               ) : (
                 <>
-                  <td className="text-right tabular-nums text-success">{Number(r.diffDamage) > 0 ? `+${formatPower(r.diffDamage)}` : "—"}</td>
+                  <td className="text-right tabular-nums text-success">{Number(r.diffDamage) > 0 ? `+${formatPower(r.diffDamage)}` : t.common.emptyDash}</td>
                   <td className="text-right tabular-nums">{r.pvpRate.toFixed(2)}</td>
                 </>
               )}

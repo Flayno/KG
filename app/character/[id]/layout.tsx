@@ -11,6 +11,7 @@ import { getCharacter, getHostileTags, getAccountCount } from "@/lib/data";
 import { parseTags } from "@/lib/tags";
 import { refreshCharacter } from "@/lib/refresh";
 import { relativeOnline, relativeTime } from "@/lib/format";
+import { getLocale, getServerDictionary } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export default async function CharacterLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const locale = await getLocale();
+  const t = await getServerDictionary();
   await refreshCharacter(Number(id)); // pull latest + full history (throttled)
   const c = await getCharacter(Number(id));
   if (!c) notFound();
@@ -36,7 +39,7 @@ export default async function CharacterLayout({
       <Breadcrumbs
         items={[
           ...(cluster ? [{ label: cluster.name, href: `/ratings/characters?cluster=${cluster.id}` }] : []),
-          { label: `Сервер #${c.serverId}`, href: `/server/${c.serverId}` },
+          { label: `${t.common.server} #${c.serverId}`, href: `/server/${c.serverId}` },
           ...(c.alliance ? [{ label: `[${c.alliance.label}]`, href: `/alliance/${c.alliance.id}` }] : []),
           { label: c.nickname },
         ]}
@@ -52,27 +55,27 @@ export default async function CharacterLayout({
               {c.blacklisted && <BlacklistMark reason={c.blacklistReason} />}
               {!c.active && (
                 <span className="text-xs font-normal text-muted border border-border rounded px-1.5 py-0.5">
-                  неактивен
+                  {t.common.inactive}
                 </span>
               )}
             </h1>
             <div className="text-muted text-sm mt-1 flex flex-wrap gap-x-3 gap-y-1">
-              <span>Альянс: <AllianceTag alliance={c.alliance} /></span>
-              <span>Сервер: <Link href={`/server/${c.serverId}`}>#{c.serverId}</Link></span>
-              <span>{relativeOnline(c.lastOnlineDays)}</span>
+              <span>{t.common.alliance}: <AllianceTag alliance={c.alliance} locale={locale} /></span>
+              <span>{t.common.server}: <Link href={`/server/${c.serverId}`}>#{c.serverId}</Link></span>
+              <span>{relativeOnline(c.lastOnlineDays, locale)}</span>
               {c.refreshedAt && (
-                <span className="opacity-70">· обновлено {relativeTime(c.refreshedAt)}</span>
+                <span className="opacity-70">· {t.common.updated} {relativeTime(c.refreshedAt, locale)}</span>
               )}
             </div>
             {hostileTags.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                <span className="text-muted text-xs">Был в недружественных:</span>
-                <HostileTags tags={hostileTags} />
+                <span className="text-muted text-xs">{t.character.hostileHistory}</span>
+                <HostileTags tags={hostileTags} locale={locale} />
               </div>
             )}
             {c.blacklisted && parseTags(c.blacklistReason).length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                <span className="text-danger text-xs font-medium">Чёрный список:</span>
+                <span className="text-danger text-xs font-medium">{t.character.blacklist}</span>
                 {parseTags(c.blacklistReason).map((t) => (
                   <span key={t} className="inline-flex items-center rounded-full bg-danger/15 text-red-300 ring-1 ring-danger/30 px-2.5 py-0.5 text-xs font-medium">
                     {t}
@@ -90,10 +93,10 @@ export default async function CharacterLayout({
 
       <Tabs
         items={[
-          { href: base, label: "Обзор" },
-          { href: `${base}/activity`, label: "Активность" },
-          { href: `${base}/history`, label: "История" },
-          { href: `${base}/linked`, label: `Персонажи аккаунта (${accountCount})` },
+          { href: base, label: t.common.overview },
+          { href: `${base}/activity`, label: t.common.activity },
+          { href: `${base}/history`, label: t.common.history },
+          { href: `${base}/linked`, label: t.character.accountCharacters(accountCount) },
         ]}
       />
 

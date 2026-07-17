@@ -4,23 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { HeaderSearch } from "./HeaderSearch";
+import { LanguageSwitch } from "./LanguageSwitch";
+import { useDictionary } from "./LocaleProvider";
 import {
   IconTrophy, IconLayers, IconSearch, IconScale, IconBan, IconMap, IconWrench,
 } from "./icons";
 
 const NAV = [
-  { href: "/ratings", label: "Рейтинги", Icon: IconTrophy },
-  { href: "/clusters", label: "Кластеры", Icon: IconLayers },
-  { href: "/character/search", label: "Поиск", Icon: IconSearch },
-  { href: "/compare", label: "Сравнение", Icon: IconScale },
-  { href: "/blacklist", label: "Чёрный список", Icon: IconBan },
-  { href: "/bl", label: "Карта BL", Icon: IconMap },
-  { href: "/tools", label: "Инструменты", Icon: IconWrench },
-];
+  { href: "/ratings", key: "ratings", Icon: IconTrophy },
+  { href: "/clusters", key: "clusters", Icon: IconLayers },
+  { href: "/character/search", key: "search", Icon: IconSearch },
+  { href: "/compare", key: "compare", Icon: IconScale },
+  { href: "/blacklist", key: "blacklist", Icon: IconBan },
+  { href: "/bl", key: "blMap", Icon: IconMap },
+  { href: "/tools", key: "tools", Icon: IconWrench },
+] as const;
 
 export function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const t = useDictionary();
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
@@ -38,7 +41,7 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-0.5 ml-3">
-            {NAV.map(({ href, label, Icon }) => {
+            {NAV.map(({ href, key, Icon }) => {
               const active = isActive(href);
               return (
                 <Link
@@ -51,7 +54,7 @@ export function Navbar() {
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span className="whitespace-nowrap">{label}</span>
+                  <span className="whitespace-nowrap">{t.nav[key]}</span>
                 </Link>
               );
             })}
@@ -61,8 +64,9 @@ export function Navbar() {
             <div className="hidden sm:block w-44 md:w-60">
               <HeaderSearch />
             </div>
+            <LanguageSwitch />
             <button
-              aria-label="Меню"
+              aria-label={t.nav.menu}
               onClick={() => setOpen((o) => !o)}
               className="lg:hidden p-2 rounded-lg hover:bg-white/[0.06] text-foreground"
             >
@@ -77,7 +81,7 @@ export function Navbar() {
 
         {open && (
           <nav className="lg:hidden pb-3 flex flex-col gap-1">
-            {NAV.map(({ href, label, Icon }) => (
+            {NAV.map(({ href, key, Icon }) => (
               <Link
                 key={href}
                 href={href}
@@ -87,7 +91,7 @@ export function Navbar() {
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                {label}
+                {t.nav[key]}
               </Link>
             ))}
           </nav>

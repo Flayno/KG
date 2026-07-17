@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card, PageTitle, Flag } from "@/components/Bits";
+import { useDictionary } from "@/components/LocaleProvider";
 import { formatPower, formatNumber } from "@/lib/format";
 import type { CharacterView } from "@/lib/types";
 
@@ -12,6 +13,7 @@ function Picker({
   label: string;
   onPick: (c: CharacterView) => void;
 }) {
+  const t = useDictionary();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<CharacterView[]>([]);
   const abort = useRef<AbortController | null>(null);
@@ -41,7 +43,7 @@ function Picker({
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Ник персонажа…"
+        placeholder={t.compare.placeholder}
         className="w-full mt-1 bg-surface border border-border rounded-lg px-3 py-2 outline-none focus:border-primary"
       />
       {visibleResults.length > 0 && (
@@ -67,23 +69,23 @@ function Picker({
   );
 }
 
-const ROWS: { label: string; get: (c: CharacterView) => number; fmt: (n: number) => string }[] = [
-  { label: "Мощь", get: (c) => Number(c.power), fmt: formatPower },
-  { label: "Макс. мощь", get: (c) => Number(c.maxPower), fmt: formatPower },
-  { label: "Уровень", get: (c) => c.level, fmt: formatNumber },
-  { label: "PvP урон", get: (c) => Number(c.pvpDamage), fmt: formatPower },
-];
-
 export default function ComparePage() {
+  const t = useDictionary();
   const [a, setA] = useState<CharacterView | null>(null);
   const [b, setB] = useState<CharacterView | null>(null);
+  const rows: { label: string; get: (c: CharacterView) => number; fmt: (n: number) => string }[] = [
+    { label: t.common.power, get: (c) => Number(c.power), fmt: formatPower },
+    { label: t.compare.maxPower, get: (c) => Number(c.maxPower), fmt: formatPower },
+    { label: t.common.level, get: (c) => c.level, fmt: formatNumber },
+    { label: t.common.pvpDamage, get: (c) => Number(c.pvpDamage), fmt: formatPower },
+  ];
 
   return (
     <div>
-      <PageTitle title="Сравнение персонажей" subtitle="Выберите двух персонажей" />
+      <PageTitle title={t.compare.title} subtitle={t.compare.subtitle} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Picker label="Персонаж A" onPick={setA} />
-        <Picker label="Персонаж B" onPick={setB} />
+        <Picker label={t.compare.characterA} onPick={setA} />
+        <Picker label={t.compare.characterB} onPick={setB} />
       </div>
 
       {a && b && (
@@ -97,7 +99,7 @@ export default function ComparePage() {
               <Flag flag={b.flag} /> {b.nickname}
             </div>
           </div>
-          {ROWS.map((row) => {
+          {rows.map((row) => {
             const va = row.get(a);
             const vb = row.get(b);
             return (

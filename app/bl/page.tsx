@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PageTitle } from "@/components/Bits";
+import { useDictionary, useLocale } from "@/components/LocaleProvider";
 
 const N = 24;
 const CELL = 30;
@@ -11,18 +12,20 @@ const MAP_SRC = "/bl-map.png";
 type Mark = { m?: string; t?: string };
 type Marks = Record<string, Mark>;
 
-const BRUSHES: { key: string; label: string; color?: string }[] = [
-  { key: "atk", label: "Наша атака", color: "#2ecc71" },
-  { key: "def", label: "Оборона", color: "#4da3ff" },
-  { key: "enemy", label: "Цель врага", color: "#e74c3c" },
-  { key: "note", label: "Заметка" },
-  { key: "erase", label: "Ластик" },
+const BRUSH_CONFIG: { key: string; color?: string }[] = [
+  { key: "atk", color: "#2ecc71" },
+  { key: "def", color: "#4da3ff" },
+  { key: "enemy", color: "#e74c3c" },
+  { key: "note" },
+  { key: "erase" },
 ];
 const MARK_COLOR: Record<string, string> = Object.fromEntries(
-  BRUSHES.filter((b) => b.color).map((b) => [b.key, b.color!])
+  BRUSH_CONFIG.filter((b) => b.color).map((b) => [b.key, b.color!])
 );
 
 export default function BlPlannerPage() {
+  const locale = useLocale();
+  const t = useDictionary();
   const [marks, setMarks] = useState<Marks>({});
   const [brush, setBrush] = useState("atk");
   const [dirty, setDirty] = useState(false);
@@ -30,19 +33,28 @@ export default function BlPlannerPage() {
   const [hasMap, setHasMap] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const painting = useRef(false);
+  const brushes = BRUSH_CONFIG.map((b) => ({
+    ...b,
+    label:
+      b.key === "atk" ? t.bl.ourAttack :
+      b.key === "def" ? t.bl.defense :
+      b.key === "enemy" ? t.bl.enemyTarget :
+      b.key === "note" ? t.bl.note :
+      t.bl.eraser,
+  }));
 
   useEffect(() => {
     fetch("/api/bl-plan")
       .then((r) => r.json())
       .then((d) => {
         setMarks(d.cells || {});
-        setSaved(d.updatedAt ? new Date(d.updatedAt).toLocaleString("ru-RU") : null);
+        setSaved(d.updatedAt ? new Date(d.updatedAt).toLocaleString(locale === "en" ? "en-US" : "ru-RU") : null);
       })
       .catch(() => {});
     const up = () => (painting.current = false);
     window.addEventListener("pointerup", up);
     return () => window.removeEventListener("pointerup", up);
-  }, []);
+  }, [locale]);
 
   function apply(x: number, y: number) {
     const key = `${x}_${y}`;
@@ -51,9 +63,9 @@ export default function BlPlannerPage() {
       const cur = next[key] ?? {};
       if (brush === "erase") delete next[key];
       else if (brush === "note") {
-        const t = window.prompt("Заметка на клетке:", cur.t ?? "");
-        if (t === null) return prev;
-        next[key] = { ...cur, t: t || undefined };
+        const note = window.prompt(t.bl.notePrompt, cur.t ?? "");
+        if (note === null) return prev;
+        next[key] = { ...cur, t: note || undefined };
         if (!next[key].m && !next[key].t) delete next[key];
       } else next[key] = { ...cur, m: brush };
       return next;
@@ -68,15 +80,15 @@ export default function BlPlannerPage() {
       body: JSON.stringify({ gridSize: N, cells: marks }),
     });
     setDirty(false);
-    setSaved(new Date().toLocaleString("ru-RU"));
+    setSaved(new Date().toLocaleString(locale === "en" ? "en-US" : "ru-RU"));
   }
 
   return (
     <div>
-      <PageTitle title="Карта BL — планировщик" subtitle="Реальная карта BL 24×24. Отмечай атаки, оборону и цели — план общий для офицеров." />
+      <PageTitle title={t.bl.title} subtitle={t.bl.subtitle} />
 
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        {BRUSHES.map((b) => (
+        {brushes.map((b) => (
           <button
             key={b.key}
             onClick={() => setBrush(b.key)}
@@ -90,20 +102,20 @@ export default function BlPlannerPage() {
         ))}
         <span className="mx-1 h-5 w-px bg-border" />
         <label className="text-sm text-muted inline-flex items-center gap-1">
-          <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} /> сетка
+          <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} /> {t.bl.grid}
         </label>
-        <button onClick={() => { if (confirm("Очистить все метки?")) { setMarks({}); setDirty(true); } }} className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground">
-          Очистить метки
+        <button onClick={() => { if (confirm(t.bl.clearConfirm)) { setMarks({}); setDirty(true); } }} className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground">
+          {t.bl.clear}
         </button>
         <button onClick={save} disabled={!dirty} className="text-sm px-4 py-1.5 rounded bg-primary-strong text-white disabled:opacity-40">
-          Сохранить
+          {t.common.save}
         </button>
-        <span className="text-xs text-muted">{dirty ? "не сохранено" : saved ? `сохранено: ${saved}` : ""}</span>
+        <span className="text-xs text-muted">{dirty ? t.bl.dirty : saved ? t.bl.saved(saved) : ""}</span>
       </div>
 
       {!hasMap && (
         <div className="mb-3 text-sm text-orange-400 border border-orange-500/40 rounded p-3 max-w-xl">
-          Карта не найдена. Сохрани изображение карты как <code className="text-foreground">public/bl-map.png</code> в папке проекта — и обнови страницу.
+          {t.bl.mapMissing} <code className="text-foreground">public/bl-map.png</code> {t.bl.mapMissingTail}
         </div>
       )}
 
@@ -155,14 +167,14 @@ export default function BlPlannerPage() {
       </div>
 
       <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-muted">
-        {BRUSHES.filter((b) => b.color).map((b) => (
+        {brushes.filter((b) => b.color).map((b) => (
           <span key={b.key} className="inline-flex items-center gap-1">
             <span className="w-3 h-3 rounded-full inline-block" style={{ background: b.color }} /> {b.label}
           </span>
         ))}
       </div>
       <p className="text-muted text-xs mt-2">
-        Клик/протаскивание — метки; «Заметка» — клик по клетке. «Сетку» можно скрыть галочкой. План общий, не забудь «Сохранить».
+        {t.bl.help}
       </p>
     </div>
   );

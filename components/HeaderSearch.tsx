@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Flag, BlacklistMark } from "./Bits";
 import { Avatar } from "./Avatar";
+import { useDictionary } from "./LocaleProvider";
 import { formatPower } from "@/lib/format";
 import type { CharacterView } from "@/lib/types";
 
 export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) {
+  const t = useDictionary();
   const hero = variant === "hero";
   const [q, setQ] = useState("");
   const [results, setResults] = useState<CharacterView[]>([]);
@@ -70,7 +72,7 @@ export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) 
             else router.push(`/character/search?q=${encodeURIComponent(q)}`);
           }
         }}
-        placeholder={hero ? "Поиск игрока по имени…" : "Поиск игрока…"}
+        placeholder={hero ? t.search.headerHero : t.search.header}
         className={
           hero
             ? "w-full glass rounded-xl pl-11 pr-4 py-3.5 text-[15px] outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition"

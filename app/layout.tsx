@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Open_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { LocaleProvider } from "@/components/LocaleProvider";
+import { getLocale, getServerDictionary } from "@/lib/i18n-server";
 
 const openSans = Open_Sans({
   variable: "--font-open-sans",
@@ -20,24 +22,29 @@ export const metadata: Metadata = {
     "KG Companion — игровой компаньон для поиска персонажей и просмотра их исторической мощи в игре Kingdom Guard",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const t = await getServerDictionary();
+
   return (
-    <html lang="ru" className={`${openSans.variable} ${jetbrains.variable} h-full antialiased`}>
+    <html lang={locale} className={`${openSans.variable} ${jetbrains.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-6">
-          {children}
-        </main>
-        <footer className="border-t border-border/70 text-subtle text-xs mt-8">
-          <div className="max-w-6xl mx-auto px-4 py-5 flex flex-wrap gap-x-4 gap-y-1 justify-between">
-            <span>KG Companion — панель офицеров</span>
-            <span>данные: kg.dbapp.ru · Next.js</span>
-          </div>
-        </footer>
+        <LocaleProvider locale={locale}>
+          <Navbar />
+          <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-6">
+            {children}
+          </main>
+          <footer className="border-t border-border/70 text-subtle text-xs mt-8">
+            <div className="max-w-6xl mx-auto px-4 py-5 flex flex-wrap gap-x-4 gap-y-1 justify-between">
+              <span>{t.footer.product}</span>
+              <span>{t.footer.data}</span>
+            </div>
+          </footer>
+        </LocaleProvider>
       </body>
     </html>
   );

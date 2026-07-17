@@ -10,11 +10,14 @@ import { blStatus, seasonNumberAt, formatDaysLeft } from "@/lib/bl";
 import { refreshAlliance, ensureMemberHistories } from "@/lib/refresh";
 import { formatPower } from "@/lib/format";
 import { HOME_ALLIANCE_ID } from "@/lib/config";
+import { getLocale, getServerDictionary } from "@/lib/i18n-server";
 import type { CharacterView } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const locale = await getLocale();
+  const t = await getServerDictionary();
   const id = HOME_ALLIANCE_ID;
   await refreshAlliance(id); // live data (throttled)
   const a = await getAlliance(id);
@@ -48,27 +51,27 @@ export default async function HomePage() {
               <Link href={`/alliance/${id}`} className="no-underline grad-green-flow hover:opacity-90 transition-opacity">
                 [{a.label}] {a.name}
               </Link>
-              {a.hostile && <Tag color="orange">Недружественный</Tag>}
+              {a.hostile && <Tag color="orange">{t.home.hostile}</Tag>}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-3.5">
               <Link href={`/server/${a.serverId}`} className="chip no-underline">
                 <span className="w-1.5 h-1.5 rounded-full bg-success" aria-hidden />
-                Сервер {a.serverId}
+                {t.common.server} {a.serverId}
               </Link>
               <span className="chip">
                 <IconWrench className="w-3.5 h-3.5 text-subtle" />
-                Тех {a.techLevel}
+                {t.home.tech} {a.techLevel}
               </span>
               {(a.kvkWins ?? 0) > 0 && (
-                <span className="chip" title={`Победы BL: ${a.kvkWins}`}>
+                <span className="chip" title={`${t.home.blWins}: ${a.kvkWins}`}>
                   <Awards wins={a.kvkWins ?? 0} size={14} />
                 </span>
               )}
-              <span className="chip" title="Огненная экспедиция (BL)">
+              <span className="chip" title={t.home.blTitle}>
                 <span className={`w-1.5 h-1.5 rounded-full ${bl.phase === "active" ? "bg-danger animate-pulse" : "bg-subtle"}`} aria-hidden />
                 {bl.phase === "active"
-                  ? `BL сезон ${bl.season} · до конца ${formatDaysLeft(bl.msToNext)}`
-                  : `BL отдых · до сезона ${bl.nextSeason}: ${formatDaysLeft(bl.msToNext)}`}
+                  ? t.home.blSeasonLeft(bl.season, formatDaysLeft(bl.msToNext, locale))
+                  : t.home.blRestLeft(bl.nextSeason, formatDaysLeft(bl.msToNext, locale))}
               </span>
             </div>
           </div>
@@ -77,21 +80,27 @@ export default async function HomePage() {
 
       {/* stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Суммарная мощь" value={formatPower(a.power)} accent="green" />
-        <StatTile label="Состав" value={`${characters.length}/${a.maxMembers}`} />
-        <StatTile label="Средняя мощь" value={avg} accent="gold" />
+        <StatTile label={t.common.totalPower} value={formatPower(a.power)} accent="green" />
+        <StatTile label={t.common.members} value={`${characters.length}/${a.maxMembers}`} />
+        <StatTile label={t.common.averagePower} value={avg} accent="gold" />
         <Link href={`/alliance/${id}/former`} className="no-underline cursor-pointer">
-          <StatTile label="Бывших игроков" value={formerCount} hint="кто ушёл — нажми →" accent="violet" />
+          <StatTile label={t.home.formerPlayers} value={formerCount} hint={t.home.formerHint} accent="violet" />
         </Link>
       </div>
 
       {/* roster */}
       <div>
         <div className="flex items-center justify-end mb-2.5">
-          <Link href={`/alliance/${id}`} className="text-sm">Открыть альянс →</Link>
+          <Link href={`/alliance/${id}`} className="text-sm">{t.common.openAlliance}</Link>
         </div>
         <Card className="p-2">
-          <AllianceMemberTable characters={characters as CharacterView[]} tagsById={tagsById} pvpById={seasonPvpById} pvpLabel={`PvP · сезон ${season}`} />
+          <AllianceMemberTable
+            characters={characters as CharacterView[]}
+            tagsById={tagsById}
+            pvpById={seasonPvpById}
+            pvpLabel={`PvP · ${t.common.season} ${season}`}
+            locale={locale}
+          />
         </Card>
       </div>
     </div>

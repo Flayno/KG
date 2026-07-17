@@ -3,6 +3,7 @@ import { Card, Flag, AllianceTag, BlacklistMark, HostileTags } from "@/component
 import { Avatar } from "@/components/Avatar";
 import { getFormerMembers, getHostileTagsFor } from "@/lib/data";
 import { formatPower } from "@/lib/format";
+import { getLocale, getServerDictionary } from "@/lib/i18n-server";
 
 export default async function AllianceFormer({
   params,
@@ -10,21 +11,23 @@ export default async function AllianceFormer({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const locale = await getLocale();
+  const t = await getServerDictionary();
   const chars = await getFormerMembers(id);
   const tags = await getHostileTagsFor(chars.map((c) => c.id));
 
   return (
     <Card className="p-2">
-      <h2 className="text-lg font-semibold px-2 pt-2">Бывшие участники ({chars.length})</h2>
-      <p className="text-muted text-xs px-2 pb-2">Были в альянсе, сейчас в другом месте</p>
+      <h2 className="text-lg font-semibold px-2 pt-2">{t.alliance.formerMembers(chars.length)}</h2>
+      <p className="text-muted text-xs px-2 pb-2">{t.alliance.formerSubtitle}</p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted text-left border-b border-border">
-              <th className="py-2 pl-2 pr-1 font-medium">Игрок</th>
-              <th className="py-2 px-1 font-medium">Сейчас в альянсе</th>
-              <th className="py-2 px-1 font-medium">Сервер</th>
-              <th className="py-2 pl-1 pr-2 font-medium text-right">Истор. мощь</th>
+              <th className="py-2 pl-2 pr-1 font-medium">{t.common.player}</th>
+              <th className="py-2 px-1 font-medium">{t.alliance.currentAlliance}</th>
+              <th className="py-2 px-1 font-medium">{t.common.server}</th>
+              <th className="py-2 pl-1 pr-2 font-medium text-right">{t.common.historicalPower}</th>
             </tr>
           </thead>
           <tbody>
@@ -36,11 +39,11 @@ export default async function AllianceFormer({
                     <Flag flag={c.flag} />
                     <span className="font-medium truncate max-w-[11rem]">{c.nickname}</span>
                     {c.blacklisted && <BlacklistMark reason={c.blacklistReason} />}
-                    <HostileTags tags={tags.get(c.id)} />
+                    <HostileTags tags={tags.get(c.id)} locale={locale} />
                   </Link>
                 </td>
                 <td className="py-2 px-1">
-                  {c.alliance ? <AllianceTag alliance={c.alliance} /> : <span className="text-muted">без альянса</span>}
+                  {c.alliance ? <AllianceTag alliance={c.alliance} locale={locale} /> : <span className="text-muted">{t.common.noAlliance}</span>}
                 </td>
                 <td className="py-2 px-1">
                   <Link href={`/server/${c.serverId}`} className="text-muted hover:text-foreground">#{c.serverId}</Link>
@@ -52,7 +55,7 @@ export default async function AllianceFormer({
         </table>
         {chars.length === 0 && (
           <div className="text-muted text-center py-8">
-            Пока нет данных о бывших участниках. Они появляются по мере просмотра игроков.
+            {t.alliance.formerEmpty}
           </div>
         )}
       </div>

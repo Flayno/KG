@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useDictionary } from "./LocaleProvider";
 
 export function HostileButton({
   id,
@@ -12,6 +13,7 @@ export function HostileButton({
   hostile: boolean;
   reason?: string | null;
 }) {
+  const t = useDictionary();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -38,7 +40,7 @@ export function HostileButton({
         disabled={pending}
         className="text-sm px-3 py-1.5 rounded border border-orange-500 text-orange-400 hover:bg-orange-500/10 disabled:opacity-50"
       >
-        Снять метку «недружественный»
+        {t.hostile.unmark}
       </button>
     );
   }
@@ -50,14 +52,14 @@ export function HostileButton({
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Причина (необязательно)"
+          placeholder={t.hostile.reasonPlaceholder}
           className="bg-surface-2 border border-border rounded px-2 py-1.5 text-sm outline-none focus:border-primary"
         />
         <button onClick={add} disabled={pending} className="text-sm px-3 py-1.5 rounded bg-orange-500 text-white hover:opacity-90 disabled:opacity-50">
-          Отметить
+          {t.hostile.submit}
         </button>
         <button onClick={() => setEditing(false)} className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground">
-          Отмена
+          {t.common.cancel}
         </button>
       </div>
     );
@@ -68,7 +70,7 @@ export function HostileButton({
       onClick={() => setEditing(true)}
       className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground"
     >
-      Отметить недружественным
+      {t.hostile.mark}
     </button>
   );
 }

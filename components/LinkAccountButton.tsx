@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useDictionary } from "./LocaleProvider";
 
 // Extract the last long number from an id or a character URL.
 function parseId(s: string): number {
@@ -10,6 +11,7 @@ function parseId(s: string): number {
 }
 
 export function LinkAccountButton({ id }: { id: number }) {
+  const t = useDictionary();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -19,7 +21,7 @@ export function LinkAccountButton({ id }: { id: number }) {
   async function submit() {
     const other = parseId(val);
     if (!other || other === id) {
-      setErr("Укажите ID или ссылку другого персонажа");
+      setErr(t.character.linkMissing);
       return;
     }
     setErr("");
@@ -30,7 +32,7 @@ export function LinkAccountButton({ id }: { id: number }) {
     });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error || "Ошибка связывания");
+      setErr(j.error || t.character.linkError);
       return;
     }
     setEditing(false);
@@ -45,14 +47,14 @@ export function LinkAccountButton({ id }: { id: number }) {
           autoFocus
           value={val}
           onChange={(e) => setVal(e.target.value)}
-          placeholder="ID или ссылка на персонажа"
+          placeholder={t.character.linkPlaceholder}
           className="bg-surface-2 border border-border rounded px-2 py-1.5 text-sm outline-none focus:border-primary w-64"
         />
         <button onClick={submit} disabled={pending} className="text-sm px-3 py-1.5 rounded bg-primary-strong text-white hover:opacity-90 disabled:opacity-50">
-          Связать
+          {t.character.linkSubmit}
         </button>
         <button onClick={() => setEditing(false)} className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground">
-          Отмена
+          {t.common.cancel}
         </button>
         {err && <span className="text-red-400 text-xs w-full">{err}</span>}
       </div>
@@ -64,7 +66,7 @@ export function LinkAccountButton({ id }: { id: number }) {
       onClick={() => setEditing(true)}
       className="text-sm px-3 py-1.5 rounded border border-border text-muted hover:text-foreground"
     >
-      Связать аккаунт
+      {t.character.linkAccount}
     </button>
   );
 }

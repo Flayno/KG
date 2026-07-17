@@ -10,6 +10,7 @@ import { getAlliance, getFormerCount } from "@/lib/data";
 import { refreshAlliance } from "@/lib/refresh";
 import { relativeTime } from "@/lib/format";
 import { stripGameMarkup } from "@/lib/gameText";
+import { getLocale, getServerDictionary } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,8 @@ export default async function AllianceLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const locale = await getLocale();
+  const t = await getServerDictionary();
   await refreshAlliance(id); // refresh alliance + all members (throttled)
   const a = await getAlliance(id);
   if (!a) notFound();
@@ -35,7 +38,7 @@ export default async function AllianceLayout({
       <Breadcrumbs
         items={[
           ...(cluster ? [{ label: cluster.name, href: `/ratings/alliances?cluster=${cluster.id}` }] : []),
-          { label: `Сервер #${a.serverId}`, href: `/server/${a.serverId}` },
+          { label: `${t.common.server} #${a.serverId}`, href: `/server/${a.serverId}` },
           { label: `[${a.label}]` },
         ]}
       />
@@ -47,24 +50,24 @@ export default async function AllianceLayout({
             <h1 className="text-2xl font-bold flex items-center gap-2 flex-wrap">
               [{a.label}] <span className="text-muted font-normal">{a.name}</span>
               {a.hostile && (
-                <Tag color="orange" title={a.hostileReason ?? "Недружественный альянс"}>
-                  Недружественный
+                <Tag color="orange" title={a.hostileReason ?? t.hostile.alliance}>
+                  {t.home.hostile}
                 </Tag>
               )}
-              {a.hasBlacklisted && <BlacklistMark reason="в альянсе есть игрок из чёрного списка" />}
+              {a.hasBlacklisted && <BlacklistMark reason={t.hostile.hasBlacklisted} />}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2 text-sm">
               <Link href={`/server/${a.serverId}`} className="bg-surface-2 rounded px-2 py-0.5 text-muted no-underline hover:text-foreground">
-                Сервер #{a.serverId}
+                {t.common.server} #{a.serverId}
               </Link>
               <span className="bg-surface-2 rounded px-2 py-0.5 text-muted">⚔ {a.techLevel}</span>
               {(a.kvkWins ?? 0) > 0 && (
-                <span className="bg-surface-2 rounded px-2 py-0.5 inline-flex items-center" title={`Победы BL: ${a.kvkWins}`}>
+                <span className="bg-surface-2 rounded px-2 py-0.5 inline-flex items-center" title={`${t.home.blWins}: ${a.kvkWins}`}>
                   <Awards wins={a.kvkWins ?? 0} size={15} />
                 </span>
               )}
               {a.refreshedAt && (
-                <span className="text-muted opacity-70">обновлено {relativeTime(a.refreshedAt)}</span>
+                <span className="text-muted opacity-70">{t.common.updated} {relativeTime(a.refreshedAt, locale)}</span>
               )}
             </div>
             {description && (
@@ -81,10 +84,10 @@ export default async function AllianceLayout({
 
       <Tabs
         items={[
-          { href: base, label: "Обзор" },
-          { href: `${base}/history`, label: "История" },
-          { href: `${base}/activity`, label: "Активность" },
-          { href: `${base}/former`, label: `Бывшие (${formerCount})` },
+          { href: base, label: t.common.overview },
+          { href: `${base}/history`, label: t.common.history },
+          { href: `${base}/activity`, label: t.common.activity },
+          { href: `${base}/former`, label: `${t.common.former} (${formerCount})` },
           { href: `${base}/bl`, label: "BL" },
         ]}
       />

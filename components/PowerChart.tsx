@@ -1,17 +1,21 @@
 import { formatPower } from "@/lib/format";
+import { DEFAULT_LOCALE, getDictionary, type Locale } from "@/lib/i18n";
 
 // Dependency-free SVG line chart for power history.
 export function PowerChart({
   points,
   height = 160,
   color = "var(--primary)",
+  locale = DEFAULT_LOCALE,
 }: {
   points: { date: string; value: number }[];
   height?: number;
   color?: string;
+  locale?: Locale;
 }) {
+  const t = getDictionary(locale);
   if (points.length < 2) {
-    return <div className="text-muted text-sm py-8 text-center">Недостаточно данных для графика</div>;
+    return <div className="text-muted text-sm py-8 text-center">{t.character.notEnoughChartData}</div>;
   }
   const W = 600;
   const H = height;
@@ -33,7 +37,7 @@ export function PowerChart({
   const ticks = [max, min + range / 2, min];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="График мощи">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={t.common.powerHistory}>
       {ticks.map((t, i) => {
         const yy = y(t);
         return (

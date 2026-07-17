@@ -1,6 +1,7 @@
 import { Card } from "@/components/Bits";
 import { AllianceTable } from "@/components/Tables";
 import { getServerAlliances } from "@/lib/data";
+import { getLocale, getServerDictionary } from "@/lib/i18n-server";
 import type { AllianceView } from "@/lib/types";
 
 export default async function ServerAlliances({
@@ -9,11 +10,13 @@ export default async function ServerAlliances({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const locale = await getLocale();
+  const t = await getServerDictionary();
   const { alliances } = await getServerAlliances(Number(id));
   return (
     <Card className="p-2">
-      <h2 className="text-lg font-semibold px-2 pt-2">Альянсы ({alliances.length})</h2>
-      <AllianceTable alliances={alliances as AllianceView[]} />
+      <h2 className="text-lg font-semibold px-2 pt-2">{t.common.alliances} ({alliances.length})</h2>
+      <AllianceTable alliances={alliances as AllianceView[]} locale={locale} />
     </Card>
   );
 }

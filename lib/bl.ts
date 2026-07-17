@@ -66,9 +66,14 @@ export function seasonActiveDateRange(season: number): { gte: string; lt: string
   };
 }
 
-export function formatDaysLeft(ms: number, locale: "ru" | "en" = "ru"): string {
+export function formatDaysLeft(ms: number, locale: "ru" | "en" | "de" = "ru"): string {
   const d = Math.floor(ms / DAY);
   const h = Math.floor((ms % DAY) / 3_600_000);
+  if (locale === "de") {
+    if (d > 0) return `${d} T. ${h} Std.`;
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    return `${h} Std. ${m} Min.`;
+  }
   if (d > 0) return locale === "en" ? `${d}d ${h}h` : `${d} дн ${h} ч`;
   const m = Math.floor((ms % 3_600_000) / 60_000);
   return locale === "en" ? `${h}h ${m}m` : `${h} ч ${m} мин`;

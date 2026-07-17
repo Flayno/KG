@@ -5,12 +5,14 @@ import { useTransition } from "react";
 import { useDictionary, useLocale } from "./LocaleProvider";
 import type { Locale } from "@/lib/i18n";
 
+const LOCALE_ORDER: Locale[] = ["ru", "en", "de"];
+
 export function LanguageSwitch() {
   const locale = useLocale();
   const t = useDictionary();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const nextLocale: Locale = locale === "ru" ? "en" : "ru";
+  const nextLocale = LOCALE_ORDER[(LOCALE_ORDER.indexOf(locale) + 1) % LOCALE_ORDER.length];
 
   function switchLocale() {
     startTransition(async () => {

@@ -33,6 +33,7 @@ export default function BlPlannerPage() {
   const [hasMap, setHasMap] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const painting = useRef(false);
+  const dateLocale = locale === "en" ? "en-US" : locale === "de" ? "de-DE" : "ru-RU";
   const brushes = BRUSH_CONFIG.map((b) => ({
     ...b,
     label:
@@ -48,13 +49,13 @@ export default function BlPlannerPage() {
       .then((r) => r.json())
       .then((d) => {
         setMarks(d.cells || {});
-        setSaved(d.updatedAt ? new Date(d.updatedAt).toLocaleString(locale === "en" ? "en-US" : "ru-RU") : null);
+        setSaved(d.updatedAt ? new Date(d.updatedAt).toLocaleString(dateLocale) : null);
       })
       .catch(() => {});
     const up = () => (painting.current = false);
     window.addEventListener("pointerup", up);
     return () => window.removeEventListener("pointerup", up);
-  }, [locale]);
+  }, [dateLocale]);
 
   function apply(x: number, y: number) {
     const key = `${x}_${y}`;
@@ -80,7 +81,7 @@ export default function BlPlannerPage() {
       body: JSON.stringify({ gridSize: N, cells: marks }),
     });
     setDirty(false);
-    setSaved(new Date().toLocaleString(locale === "en" ? "en-US" : "ru-RU"));
+    setSaved(new Date().toLocaleString(dateLocale));
   }
 
   return (

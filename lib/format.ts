@@ -33,6 +33,11 @@ export function formatDate(d: string | null | undefined): string {
 }
 
 export function relativeOnline(days: number, locale: Locale = "ru"): string {
+  if (locale === "de") {
+    if (days <= 0) return "heute";
+    if (days === 1) return "vor 1 Tag";
+    return `vor ${days} Tagen`;
+  }
   if (days <= 0) return locale === "en" ? "today" : "сегодня";
   if (days === 1) return locale === "en" ? "1 day ago" : "1 день назад";
   return locale === "en" ? `${days} days ago` : `${days} дн. назад`;
@@ -41,6 +46,14 @@ export function relativeOnline(days: number, locale: Locale = "ru"): string {
 export function relativeTime(iso?: string | null, locale: Locale = "ru"): string {
   if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (locale === "de") {
+    if (m < 1) return "gerade eben";
+    if (m < 60) return `vor ${m} Min.`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `vor ${h} Std.`;
+    const d = Math.floor(h / 24);
+    return `vor ${d} T.`;
+  }
   if (m < 1) return locale === "en" ? "just now" : "только что";
   if (m < 60) return locale === "en" ? `${m} min ago` : `${m} мин назад`;
   const h = Math.floor(m / 60);

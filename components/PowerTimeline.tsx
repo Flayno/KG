@@ -31,6 +31,8 @@ const RU_WD = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 const RU_MON = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
 const EN_WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const EN_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DE_WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+const DE_MON = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const DAY_MS = 86_400_000;
 // Below this visible span (~1 season) switch axis to a labelled tick per day.
 const WEEKDAY_ZOOM_MS = 33 * DAY_MS;
@@ -63,8 +65,8 @@ export function PowerTimeline({ points }: { points: TimelinePoint[] }) {
   // Zoomed in → weekday over day; zoomed out → day over month.
   const axisFmt = useCallback((value: number) => {
     const d = new Date(value);
-    const weekdays = locale === "en" ? EN_WD : RU_WD;
-    const months = locale === "en" ? EN_MON : RU_MON;
+    const weekdays = locale === "en" ? EN_WD : locale === "de" ? DE_WD : RU_WD;
+    const months = locale === "en" ? EN_MON : locale === "de" ? DE_MON : RU_MON;
     return dayLevelRef.current
       ? `${weekdays[d.getUTCDay()]}\n${d.getUTCDate()}`
       : `${d.getUTCDate()}\n${months[d.getUTCMonth()]}`;

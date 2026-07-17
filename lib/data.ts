@@ -11,6 +11,7 @@ import {
   clusterDTO,
   flagDTO,
 } from "./serialize";
+import { refreshCharacter } from "./refresh";
 
 const serverInclude = { segment: { include: { cluster: true } } } as const;
 
@@ -322,9 +323,28 @@ export async function getAllianceHistory(id: string) {
   };
 }
 
+function parseCharacterId(search: string): number | null {
+  const normalized = search.trim().replace(/^#/, "");
+  if (!/^\d+$/.test(normalized)) return null;
+  const id = Number(normalized);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 export async function searchCharacters(search: string) {
   const q = normalizeName(search);
   if (!q) return [];
+  const exactId = parseCharacterId(search);
+
+  if (exactId) {
+    await refreshCharacter(exactId).catch(() => false);
+  }
+
+  const exactHit = exactId
+    ? await prisma.character.findFirst({
+        where: { id: exactId, deleted: false },
+        include: { flag: true, alliance: true },
+      })
+    : null;
 
   // matches by a former nickname -> characterId + the matched old name
   const nameHits = await prisma.characterNameHistory.findMany({
@@ -344,14 +364,15 @@ export async function searchCharacters(search: string) {
   const chars = await prisma.character.findMany({
     where: {
       deleted: false,
+      ...(exactId ? { id: { not: exactId } } : {}),
       OR: [{ searchName: { contains: q } }, { id: { in: hitIds } }],
     },
     include: { flag: true, alliance: true },
     orderBy: { maxPower: "desc" },
-    take: 20,
+    take: exactHit ? 19 : 20,
   });
 
-  return chars.map((c) => {
+  return [exactHit, ...chars].filter((c): c is NonNullable<typeof c> => !!c).map((c) => {
     const dto = characterDTO(c);
     const alias = aliasByChar.get(c.id);
     // show the matched old name in parens when it differs from the current one

@@ -81,6 +81,7 @@ function SearchInner() {
                 </span>
                 {c.blacklisted && <BlacklistMark reason={c.blacklistReason} />}
                 <span className="flex-1" />
+                <span className="text-muted text-sm tabular-nums">ID {c.id}</span>
                 <span className="text-muted">
                   {c.alliance ? `[${c.alliance.label}]` : t.common.emptyDash}
                 </span>

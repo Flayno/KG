@@ -8,6 +8,13 @@ import { useDictionary } from "./LocaleProvider";
 import { formatPower } from "@/lib/format";
 import type { CharacterView } from "@/lib/types";
 
+function parseCharacterId(search: string): number | null {
+  const normalized = search.trim().replace(/^#/, "");
+  if (!/^\d+$/.test(normalized)) return null;
+  const id = Number(normalized);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) {
   const t = useDictionary();
   const hero = variant === "hero";
@@ -68,7 +75,9 @@ export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) 
         onFocus={() => visibleResults.length && setOpen(true)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            if (visibleResults[0]) go(visibleResults[0].id);
+            const id = parseCharacterId(q);
+            if (id) go(id);
+            else if (visibleResults[0]) go(visibleResults[0].id);
             else router.push(`/character/search?q=${encodeURIComponent(q)}`);
           }
         }}
@@ -95,6 +104,7 @@ export function HeaderSearch({ variant = "nav" }: { variant?: "nav" | "hero" }) 
               </span>
               {c.blacklisted && <BlacklistMark reason={c.blacklistReason} />}
               <span className="flex-1" />
+              <span className="text-xs text-muted tabular-nums">ID {c.id}</span>
               {c.alliance && <span className="text-xs text-muted">[{c.alliance.label}]</span>}
               <span className="text-xs text-primary tabular-nums">{formatPower(c.maxPower)}</span>
             </button>

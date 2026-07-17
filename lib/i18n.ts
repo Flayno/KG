@@ -95,11 +95,11 @@ export const dict = {
       blRestLeft: (season: number, left: string) => `BL отдых · до сезона ${season}: ${left}`,
     },
     search: {
-      headerHero: "Поиск игрока по имени…",
-      header: "Поиск игрока…",
+      headerHero: "Поиск игрока по имени или ID…",
+      header: "Поиск игрока или ID…",
       characterTitle: "Поиск персонажа",
-      characterSubtitle: "Ищет по текущему и старым именам",
-      placeholder: "Например: Night…",
+      characterSubtitle: "Ищет по ID, текущему и старым именам",
+      placeholder: "Например: Night или 123456…",
       loading: "Поиск…",
     },
     ratings: {
@@ -174,7 +174,7 @@ export const dict = {
       subtitle: "Выберите двух персонажей",
       characterA: "Персонаж A",
       characterB: "Персонаж B",
-      placeholder: "Ник персонажа…",
+      placeholder: "Ник или ID персонажа…",
       maxPower: "Макс. мощь",
     },
     clusters: {
@@ -191,7 +191,7 @@ export const dict = {
       allianceRatingsDesc: "Сильнейшие альянсы серверов",
       compareDesc: "Сравнить двух персонажей по характеристикам",
       characterSearch: "Поиск персонажа",
-      characterSearchDesc: "Найти игрока по нику",
+      characterSearchDesc: "Найти игрока по нику или ID",
       clustersDesc: "Структура серверов по группам",
     },
     bl: {
@@ -304,11 +304,11 @@ export const dict = {
       blRestLeft: (season: number, left: string) => `BL rest · season ${season} in ${left}`,
     },
     search: {
-      headerHero: "Search player by name…",
-      header: "Search player…",
+      headerHero: "Search player by name or ID…",
+      header: "Search player or ID…",
       characterTitle: "Character search",
-      characterSubtitle: "Searches current and former names",
-      placeholder: "Example: Night…",
+      characterSubtitle: "Searches by ID, current names, and former names",
+      placeholder: "Example: Night or 123456…",
       loading: "Searching…",
     },
     ratings: {
@@ -383,7 +383,7 @@ export const dict = {
       subtitle: "Choose two characters",
       characterA: "Character A",
       characterB: "Character B",
-      placeholder: "Character nickname…",
+      placeholder: "Character nickname or ID…",
       maxPower: "Max power",
     },
     clusters: {
@@ -400,7 +400,7 @@ export const dict = {
       allianceRatingsDesc: "Strongest server alliances",
       compareDesc: "Compare two characters by stats",
       characterSearch: "Character search",
-      characterSearchDesc: "Find a player by nickname",
+      characterSearchDesc: "Find a player by nickname or ID",
       clustersDesc: "Server structure by groups",
     },
     bl: {
@@ -513,11 +513,11 @@ export const dict = {
       blRestLeft: (season: number, left: string) => `BL-Pause · Saison ${season} in ${left}`,
     },
     search: {
-      headerHero: "Spieler nach Namen suchen…",
-      header: "Spieler suchen…",
+      headerHero: "Spieler nach Namen oder ID suchen…",
+      header: "Spieler oder ID suchen…",
       characterTitle: "Charaktersuche",
-      characterSubtitle: "Sucht aktuelle und frühere Namen",
-      placeholder: "Beispiel: Night…",
+      characterSubtitle: "Sucht nach ID, aktuellen und früheren Namen",
+      placeholder: "Beispiel: Night oder 123456…",
       loading: "Suche…",
     },
     ratings: {
@@ -592,7 +592,7 @@ export const dict = {
       subtitle: "Wähle zwei Charaktere",
       characterA: "Charakter A",
       characterB: "Charakter B",
-      placeholder: "Charaktername…",
+      placeholder: "Charaktername oder ID…",
       maxPower: "Max. Macht",
     },
     clusters: {
@@ -609,7 +609,7 @@ export const dict = {
       allianceRatingsDesc: "Stärkste Server-Allianzen",
       compareDesc: "Zwei Charaktere nach Werten vergleichen",
       characterSearch: "Charaktersuche",
-      characterSearchDesc: "Spieler nach Nickname finden",
+      characterSearchDesc: "Spieler nach Nickname oder ID finden",
       clustersDesc: "Serverstruktur nach Gruppen",
     },
     bl: {
